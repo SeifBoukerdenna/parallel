@@ -3,15 +3,15 @@ import Foundation
 
 @Model
 final class BucketItem {
-    var id: UUID
-    var createdAt: Date
-    var title: String
-    var description_bucket: String?
-    var isCompleted: Bool
-    var completedAt: Date?
-    var addedBy: String
-    var category: BucketCategory
-    var priority: Int // 1-3, 3 being highest
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var title: String = ""
+    var description_bucket: String? = nil
+    var isCompleted: Bool = false
+    var completedAt: Date? = nil
+    var addedBy: String = ""
+    var category: BucketCategory = BucketCategory.relationship
+    var priority: Int = 2
     
     init(title: String, description: String? = nil, addedBy: String, category: BucketCategory, priority: Int = 2) {
         self.id = UUID()

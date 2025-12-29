@@ -13,11 +13,15 @@ struct CharacterProfileView: View {
     let herName: String
     let myCharacterImage: String?
     let herCharacterImage: String?
+    let userSettings: UserSettings?
+    let modelContext: ModelContext
     
     @State private var selectedMoment: Moment?
     @State private var searchText = ""
     @State private var isSearching = false
     @State private var currentPoseIndex = 0
+    @State private var showNicknameEditor = false
+    @State private var editingNickname = ""
     
     var characterMoments: [Moment] {
         moments.filter { $0.author == characterName }
@@ -139,11 +143,45 @@ struct CharacterProfileView: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        // Character display with pose controls
+                        // Character display with name and nickname
                         VStack(spacing: 12) {
-                            Text(characterName.uppercased())
-                                .font(.system(size: 32, weight: .black, design: .rounded))
-                                .foregroundColor(.black.opacity(0.6))
+                            VStack(spacing: 4) {
+                                Text(characterName.uppercased())
+                                    .font(.system(size: 32, weight: .black, design: .rounded))
+                                    .foregroundColor(.black.opacity(0.6))
+                                
+                                // Nickname display/editor
+                                if let nickname = userSettings?.nickname, !nickname.isEmpty {
+                                    Button {
+                                        editingNickname = nickname
+                                        showNicknameEditor = true
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Text(nickname)
+                                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                .foregroundColor(.black.opacity(0.35))
+                                                .italic()
+                                            
+                                            Image(systemName: "pencil")
+                                                .font(.system(size: 11))
+                                                .foregroundColor(.black.opacity(0.25))
+                                        }
+                                    }
+                                } else {
+                                    Button {
+                                        editingNickname = ""
+                                        showNicknameEditor = true
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "plus.circle")
+                                                .font(.system(size: 12))
+                                            Text("Add nickname")
+                                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                        }
+                                        .foregroundColor(.black.opacity(0.3))
+                                    }
+                                }
+                            }
                             
                             // Character with smaller scale in profile
                             if isMe {
@@ -173,6 +211,7 @@ struct CharacterProfileView: View {
                                     Button {
                                         withAnimation(.spring(response: 0.3)) {
                                             currentPoseIndex = (currentPoseIndex - 1 + availablePoses.count) % availablePoses.count
+                                            updatePersistentPoseIndex()
                                         }
                                         let impact = UIImpactFeedbackGenerator(style: .light)
                                         impact.impactOccurred()
@@ -191,6 +230,7 @@ struct CharacterProfileView: View {
                                     Button {
                                         withAnimation(.spring(response: 0.3)) {
                                             currentPoseIndex = Int.random(in: 0..<availablePoses.count)
+                                            updatePersistentPoseIndex()
                                         }
                                         let impact = UIImpactFeedbackGenerator(style: .medium)
                                         impact.impactOccurred()
@@ -214,6 +254,7 @@ struct CharacterProfileView: View {
                                     Button {
                                         withAnimation(.spring(response: 0.3)) {
                                             currentPoseIndex = (currentPoseIndex + 1) % availablePoses.count
+                                            updatePersistentPoseIndex()
                                         }
                                         let impact = UIImpactFeedbackGenerator(style: .light)
                                         impact.impactOccurred()
@@ -359,6 +400,115 @@ struct CharacterProfileView: View {
         }
         .fullScreenCover(item: $selectedMoment) { moment in
             MomentDetailView(moment: moment, accentColor: accentColor)
+        }
+        .sheet(isPresented: $showNicknameEditor) {
+            NicknameEditorView(
+                currentNickname: editingNickname,
+                onSave: { newNickname in
+                    updateNickname(newNickname)
+                }
+            )
+            .presentationDetents([.height(280)])
+        }
+        .onAppear {
+            // Initialize current pose from persisted value
+            currentPoseIndex = userSettings?.currentPoseIndex ?? 0
+        }
+    }
+    
+    // Update persistent pose index when changed (syncs via CloudKit)
+    private func updatePersistentPoseIndex() {
+        userSettings?.updatePose(to: currentPoseIndex)
+    }
+    
+    // Update nickname (syncs via CloudKit)
+    private func updateNickname(_ newNickname: String) {
+        let trimmed = newNickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        userSettings?.updateNickname(to: trimmed.isEmpty ? nil : trimmed)
+    }
+}
+
+// Simple nickname editor
+struct NicknameEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    let currentNickname: String
+    let onSave: (String) -> Void
+    
+    @State private var nickname: String
+    
+    init(currentNickname: String, onSave: @escaping (String) -> Void) {
+        self.currentNickname = currentNickname
+        self.onSave = onSave
+        _nickname = State(initialValue: currentNickname)
+    }
+    
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.98, green: 0.97, blue: 0.99),
+                    Color(red: 0.96, green: 0.98, blue: 0.99)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                // Handle bar
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.black.opacity(0.15))
+                    .frame(width: 40, height: 5)
+                    .padding(.top, 12)
+                
+                Text("Set Nickname")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.black.opacity(0.7))
+                
+                TextField("Baby, Love, etc...", text: $nickname)
+                    .font(.system(size: 16, design: .rounded))
+                    .foregroundColor(.black.opacity(0.7))
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.white.opacity(0.7))
+                    )
+                    .padding(.horizontal, 24)
+                
+                HStack(spacing: 12) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Cancel")
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundColor(.black.opacity(0.5))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.white.opacity(0.6))
+                            )
+                    }
+                    
+                    Button {
+                        onSave(nickname)
+                        dismiss()
+                    } label: {
+                        Text("Save")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(red: 0.9, green: 0.5, blue: 0.4))
+                            )
+                    }
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
         }
     }
 }

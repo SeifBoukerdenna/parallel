@@ -7,8 +7,16 @@ struct parallelApp: App {
         let schema = Schema([
             Moment.self,
             Signal.self,
+            BucketItem.self,  // FIXED: Added BucketItem to schema!
+            UserSettings.self,  // For syncing nicknames and poses
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        
+        // Enable CloudKit syncing for real-time updates between devices
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic  // Enable iCloud sync
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])

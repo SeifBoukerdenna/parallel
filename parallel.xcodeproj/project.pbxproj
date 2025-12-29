@@ -10,9 +10,22 @@
 		71A80FF22F01EC2800EC7023 /* parallel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = parallel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		71A8103E2F0261E100EC7023 /* Exceptions for "parallel" folder in "parallel" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 71A80FF12F01EC2800EC7023 /* parallel */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		71A80FF42F01EC2800EC7023 /* parallel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				71A8103E2F0261E100EC7023 /* Exceptions for "parallel" folder in "parallel" target */,
+			);
 			path = parallel;
 			sourceTree = "<group>";
 		};
@@ -249,12 +262,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = parallel/parallel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"parallel/Preview Content\"";
 				DEVELOPMENT_TEAM = VZR89A8Z89;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = parallel/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to capture photo moments.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow microphone?";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photos to share moments.";
@@ -281,12 +296,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = parallel/parallel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"parallel/Preview Content\"";
 				DEVELOPMENT_TEAM = VZR89A8Z89;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = parallel/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to capture photo moments.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow microphone?";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photos to share moments.";

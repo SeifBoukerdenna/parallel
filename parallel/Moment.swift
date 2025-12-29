@@ -3,15 +3,15 @@ import Foundation
 
 @Model
 final class Moment {
-    var id: UUID
-    var createdAt: Date
-    var author: String
-    var kind: MomentKind
-    var title: String?
-    var text: String?
-    var audioPath: String?
-    var photoPath: String?
-    var isShared: Bool
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var author: String = ""
+    var kind: MomentKind = MomentKind.text
+    var title: String? = nil
+    var text: String? = nil
+    var audioPath: String? = nil
+    var photoPath: String? = nil
+    var isShared: Bool = false
     
     init(author: String, kind: MomentKind, title: String? = nil, text: String? = nil, audioPath: String? = nil, photoPath: String? = nil, isShared: Bool) {
         self.id = UUID()

@@ -9,7 +9,7 @@ struct AddMomentView: View {
     
     let myName: String
     
-    @State private var selectedType: MomentKind = .text
+    @State private var selectedType: MomentKind = MomentKind.text
     @State private var momentTitle = ""
     @State private var momentText = ""
     @State private var selectedPhoto: PhotosPickerItem?
@@ -71,18 +71,16 @@ struct AddMomentView: View {
                             .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundColor(.black.opacity(0.5))
                         Spacer()
-                        Text("\(momentTitle.count)/\(maxTitleChars)")
-                            .font(.system(size: 11, design: .rounded))
-                            .foregroundColor(momentTitle.count > maxTitleChars ? Color(red: 0.9, green: 0.3, blue: 0.3) : .black.opacity(0.3))
                     }
                     
                     TextField("Add a short title...", text: $momentTitle)
                         .font(.system(size: 15, design: .rounded))
-                        .foregroundColor(.black.opacity(0.7))
+                        .foregroundColor(.black.opacity(0.8))
+                        .accentColor(Color(red: 0.9, green: 0.4, blue: 0.5))
                         .padding(12)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.6))
+                                .fill(.white.opacity(0.7))
                         )
                 }
                 .padding(.horizontal, 20)
@@ -93,25 +91,25 @@ struct AddMomentView: View {
                     TypeButton(
                         icon: "text.alignleft",
                         label: "Text",
-                        isSelected: selectedType == .text
+                        isSelected: selectedType == MomentKind.text
                     ) {
-                        selectedType = .text
+                        selectedType = MomentKind.text
                     }
                     
                     TypeButton(
                         icon: "photo",
                         label: "Photo",
-                        isSelected: selectedType == .photo
+                        isSelected: selectedType == MomentKind.photo
                     ) {
-                        selectedType = .photo
+                        selectedType = MomentKind.photo
                     }
                     
                     TypeButton(
                         icon: "mic.fill",
                         label: "Voice",
-                        isSelected: selectedType == .voice
+                        isSelected: selectedType == MomentKind.voice
                     ) {
-                        selectedType = .voice
+                        selectedType = MomentKind.voice
                     }
                 }
                 .padding(.horizontal, 20)
@@ -201,36 +199,28 @@ struct AddMomentView: View {
     
     var textInputView: some View {
         VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                Text("\(momentText.count)/\(maxChars)")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundColor(momentText.count > maxChars ? Color(red: 0.9, green: 0.3, blue: 0.3) : .black.opacity(0.3))
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 8)
-            
             ZStack(alignment: .topLeading) {
                 if momentText.isEmpty {
                     Text("What's on your mind?")
                         .font(.system(size: 16, design: .rounded))
-                        .foregroundColor(.black.opacity(0.25))
+                        .foregroundColor(.black.opacity(0.3))
                         .padding(.horizontal, 20)
                         .padding(.top, 24)
                 }
                 
                 TextEditor(text: $momentText)
                     .font(.system(size: 16, design: .rounded))
-                    .foregroundColor(.black.opacity(0.7))
+                    .foregroundColor(.black.opacity(0.8))
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
                     .frame(height: 180)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 16)
+                    .accentColor(Color(red: 0.9, green: 0.4, blue: 0.5))
             }
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(.white.opacity(0.6))
+                    .fill(.white.opacity(0.7))
                     .shadow(color: .black.opacity(0.03), radius: 8, x: 0, y: 4)
             )
             .padding(.horizontal, 20)
@@ -287,7 +277,7 @@ struct AddMomentView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "photo.on.rectangle.angled")
                         .font(.system(size: 64))
-                        .foregroundColor(.black.opacity(0.2))
+                        .foregroundColor(.black.opacity(0.15))
                     
                     HStack(spacing: 12) {
                         Button {
@@ -444,11 +434,11 @@ struct AddMomentView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 80))
-                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.7))
+                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.6))
                     
                     Text("Tap to record")
                         .font(.system(size: 17, weight: .medium, design: .rounded))
-                        .foregroundColor(.black.opacity(0.5))
+                        .foregroundColor(.black.opacity(0.4))
                     
                     Button {
                         startRecording()
@@ -507,7 +497,7 @@ struct AddMomentView: View {
         var savedAudioPath: String?
         
         // Save photo if needed
-        if selectedType == .photo, let photoData {
+        if selectedType == MomentKind.photo, let photoData {
             let photoFileName = "\(UUID().uuidString).jpg"
             let photoURL = documentsPath.appendingPathComponent(photoFileName)
             try? photoData.write(to: photoURL)
@@ -515,7 +505,7 @@ struct AddMomentView: View {
         }
         
         // Audio path already set if voice
-        if selectedType == .voice {
+        if selectedType == MomentKind.voice {
             savedAudioPath = audioPath
         }
         
@@ -523,7 +513,7 @@ struct AddMomentView: View {
             author: myName,
             kind: selectedType,
             title: momentTitle.isEmpty ? nil : momentTitle,
-            text: selectedType == .text ? momentText : nil,
+            text: selectedType == MomentKind.text ? momentText : nil,
             audioPath: savedAudioPath,
             photoPath: savedPhotoPath,
             isShared: isShared

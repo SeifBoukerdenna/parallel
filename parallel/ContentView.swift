@@ -6,6 +6,10 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Moment.createdAt, order: .reverse) private var moments: [Moment]
     @Query(sort: \Signal.createdAt, order: .reverse) private var signals: [Signal]
+    @Query private var userSettings: [UserSettings]
+    
+    // Store which user this phone belongs to
+    @AppStorage("currentUserName") private var currentUserName: String?
     
     @State private var breathingOffset: CGFloat = 0
     @State private var showAddMoment = false
@@ -19,13 +23,44 @@ struct ContentView: View {
     @State private var audioPlayer: AVAudioPlayer?
     @State private var buttonPressed = false
     
-    // CHANGE THESE TO YOUR REAL NAMES
-    let myName = "Malik"
-    let herName = "Maya"
+    // The two names in the relationship
+    let malikName = "Malik"
+    let mayaName = "Maya"
     
-    // CUSTOM CHARACTER IMAGES (optional - leave as nil to use pixel art)
-    let myCharacterImage: String? = "melik_8bit"  // e.g. "alex_character"
-    let herCharacterImage: String? = "maya_8bit"  // Using the uploaded image
+    // CUSTOM CHARACTER IMAGES
+    let malikCharacterImage: String? = "malik_8bit"
+    let mayaCharacterImage: String? = "maya_8bit"
+    
+    // Which name is "me" and which is "them"
+    var myName: String {
+        currentUserName ?? malikName
+    }
+    
+    var herName: String {
+        if myName == malikName {
+            return mayaName
+        } else {
+            return malikName
+        }
+    }
+    
+    // Get character images based on who I am
+    var myCharacterImage: String? {
+        myName == malikName ? malikCharacterImage : mayaCharacterImage
+    }
+    
+    var herCharacterImage: String? {
+        herName == malikName ? malikCharacterImage : mayaCharacterImage
+    }
+    
+    // Get user settings from database (synced via CloudKit)
+    var mySettings: UserSettings? {
+        userSettings.first(where: { $0.userName == myName })
+    }
+    
+    var herSettings: UserSettings? {
+        userSettings.first(where: { $0.userName == herName })
+    }
     
     var myLatestSignal: Signal? {
         signals.first(where: { $0.author == myName && isToday($0.createdAt) })
@@ -55,7 +90,47 @@ struct ContentView: View {
         herLatestSignal != nil
     }
     
+    // Get available poses
+    var myAvailablePoses: [String] {
+        let poses = CharacterPoses.poses(for: myName)
+        return poses.isEmpty ? [] : poses
+    }
+    
+    var herAvailablePoses: [String] {
+        let poses = CharacterPoses.poses(for: herName)
+        return poses.isEmpty ? [] : poses
+    }
+    
+    // Get current pose images based on synced settings
+    var currentMyPoseImage: String? {
+        if myAvailablePoses.isEmpty {
+            return myCharacterImage
+        }
+        let index = mySettings?.currentPoseIndex ?? 0
+        return myAvailablePoses[index % myAvailablePoses.count]
+    }
+    
+    var currentHerPoseImage: String? {
+        if herAvailablePoses.isEmpty {
+            return herCharacterImage
+        }
+        let index = herSettings?.currentPoseIndex ?? 0
+        return herAvailablePoses[index % herAvailablePoses.count]
+    }
+    
     var body: some View {
+        Group {
+            if currentUserName == nil {
+                // Show onboarding if user hasn't selected their name
+                OnboardingView(selectedName: $currentUserName)
+            } else {
+                // Show main app
+                mainAppView
+            }
+        }
+    }
+    
+    var mainAppView: some View {
         GeometryReader { geometry in
             ZStack {
                 // Background
@@ -114,21 +189,31 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: 40)
                     
-                    // Characters with names
+                    // Characters with names and nicknames
                     HStack(spacing: 0) {
                         VStack {
-                            HStack(spacing: 4) {
-                                Text(myName.uppercased())
-                                    .font(.system(size: 28, weight: .black, design: .rounded))
-                                    .foregroundColor(.black.opacity(0.5))
+                            VStack(spacing: 2) {
+                                HStack(spacing: 4) {
+                                    Text(myName.uppercased())
+                                        .font(.system(size: 28, weight: .black, design: .rounded))
+                                        .foregroundColor(.black.opacity(0.5))
+                                    
+                                    Circle()
+                                        .fill(myHasActivity ? Color.blue.opacity(0.6) : Color.gray.opacity(0.3))
+                                        .frame(width: 8, height: 8)
+                                }
                                 
-                                Circle()
-                                    .fill(myHasActivity ? Color.blue.opacity(0.6) : Color.gray.opacity(0.3))
-                                    .frame(width: 8, height: 8)
+                                // Nickname below name
+                                if let nickname = mySettings?.nickname, !nickname.isEmpty {
+                                    Text(nickname)
+                                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                                        .foregroundColor(.black.opacity(0.35))
+                                        .italic()
+                                }
                             }
                             
                             CharacterView(
-                                imageName: myCharacterImage,
+                                imageName: currentMyPoseImage,
                                 skinColor: Color(red: 0.95, green: 0.8, blue: 0.7),
                                 hairColor: Color(red: 0.4, green: 0.25, blue: 0.15),
                                 shirtColor: Color(red: 0.2, green: 0.4, blue: 0.8),
@@ -145,18 +230,28 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity)
                         
                         VStack {
-                            HStack(spacing: 4) {
-                                Text(herName.uppercased())
-                                    .font(.system(size: 28, weight: .black, design: .rounded))
-                                    .foregroundColor(.black.opacity(0.5))
+                            VStack(spacing: 2) {
+                                HStack(spacing: 4) {
+                                    Text(herName.uppercased())
+                                        .font(.system(size: 28, weight: .black, design: .rounded))
+                                        .foregroundColor(.black.opacity(0.5))
+                                    
+                                    Circle()
+                                        .fill(herHasActivity ? Color.pink.opacity(0.6) : Color.gray.opacity(0.3))
+                                        .frame(width: 8, height: 8)
+                                }
                                 
-                                Circle()
-                                    .fill(herHasActivity ? Color.pink.opacity(0.6) : Color.gray.opacity(0.3))
-                                    .frame(width: 8, height: 8)
+                                // Nickname below name
+                                if let nickname = herSettings?.nickname, !nickname.isEmpty {
+                                    Text(nickname)
+                                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                                        .foregroundColor(.black.opacity(0.35))
+                                        .italic()
+                                }
                             }
                             
                             CharacterView(
-                                imageName: herCharacterImage,
+                                imageName: currentHerPoseImage,
                                 skinColor: Color(red: 0.98, green: 0.85, blue: 0.75),
                                 hairColor: Color(red: 0.95, green: 0.8, blue: 0.3),
                                 shirtColor: Color(red: 0.9, green: 0.2, blue: 0.3),
@@ -255,10 +350,15 @@ struct ContentView: View {
                 myName: myName,
                 herName: herName,
                 myCharacterImage: myCharacterImage,
-                herCharacterImage: herCharacterImage
+                herCharacterImage: herCharacterImage,
+                userSettings: character == myName ? mySettings : herSettings,
+                modelContext: modelContext
             )
         }
         .onAppear {
+            // Initialize user settings if they don't exist
+            initializeUserSettings()
+            
             withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
                 breathingOffset = -5
             }
@@ -284,6 +384,19 @@ struct ContentView: View {
                     showBucketHint.toggle()
                 }
             }
+        }
+    }
+    
+    private func initializeUserSettings() {
+        // Create user settings for both users if they don't exist
+        if userSettings.first(where: { $0.userName == malikName }) == nil {
+            let settings = UserSettings(userName: malikName)
+            modelContext.insert(settings)
+        }
+        
+        if userSettings.first(where: { $0.userName == mayaName }) == nil {
+            let settings = UserSettings(userName: mayaName)
+            modelContext.insert(settings)
         }
     }
     

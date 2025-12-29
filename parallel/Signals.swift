@@ -3,13 +3,13 @@ import Foundation
 
 @Model
 final class Signal {
-    var id: UUID
-    var createdAt: Date
-    var author: String
-    var energy: Double // 0-100
-    var mood: Double // -50 to +50
-    var closeness: Double // 0-100
-    var isShared: Bool = true // Default to shared for backward compatibility
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var author: String = ""
+    var energy: Double = 50.0
+    var mood: Double = 0.0
+    var closeness: Double = 50.0
+    var isShared: Bool = true
     
     init(author: String, energy: Double, mood: Double, closeness: Double, isShared: Bool = true) {
         self.id = UUID()
