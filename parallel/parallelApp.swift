@@ -3,6 +3,9 @@ import SwiftData
 
 @main
 struct parallelApp: App {
+    // Add AppDelegate for push notifications
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Moment.self,

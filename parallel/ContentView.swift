@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var isPlayingPreview = false
     @State private var audioPlayer: AVAudioPlayer?
     @State private var buttonPressed = false
+    @State private var showDeviceToken = false
     
     // The two names in the relationship
     let malikName = "Malik"
@@ -147,6 +148,26 @@ struct ContentView: View {
                 
                 // Main content
                 VStack {
+                    // Top bar with settings button
+                    HStack {
+                        Spacer()
+                        
+                        Button {
+                            showDeviceToken = true
+                        } label: {
+                            Image(systemName: "bell.badge")
+                                .font(.system(size: 16))
+                                .foregroundColor(.black.opacity(0.3))
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(.white.opacity(0.5))
+                                )
+                        }
+                        .padding(.trailing, 16)
+                        .padding(.top, 16)
+                    }
+                    
                     // Pixel bucket at top with hint
                     VStack(spacing: 8) {
                         if showBucketHint {
@@ -354,6 +375,9 @@ struct ContentView: View {
                 userSettings: character == myName ? mySettings : herSettings,
                 modelContext: modelContext
             )
+        }
+        .sheet(isPresented: $showDeviceToken) {
+            DeviceTokenView()
         }
         .onAppear {
             // Initialize user settings if they don't exist
