@@ -4,12 +4,18 @@ import SwiftData
 struct SignalPanelView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Signal.createdAt, order: .reverse) private var allSignals: [Signal]
     
     let myName: String
     
     @State private var energy: Double = 50
     @State private var mood: Double = 0
     @State private var closeness: Double = 50
+    
+    // Get my latest signal to use as defaults
+    var myLatestSignal: Signal? {
+        allSignals.first(where: { $0.author == myName })
+    }
     
     var body: some View {
         ZStack {
@@ -101,55 +107,43 @@ struct SignalPanelView: View {
                 
                 Spacer()
                 
-                // Action buttons - Share or Keep Private
-                VStack(spacing: 12) {
-                    Button {
-                        saveSignal(isShared: true)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "heart.fill")
-                            Text("Share with us")
-                        }
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color(red: 0.95, green: 0.4, blue: 0.5),
-                                            Color(red: 0.9, green: 0.3, blue: 0.45)
-                                        ],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
+                // Single "Share with us" button
+                Button {
+                    saveSignal()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "heart.fill")
+                        Text("Share with us")
+                    }
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.95, green: 0.4, blue: 0.5),
+                                        Color(red: 0.9, green: 0.3, blue: 0.45)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
                                 )
-                        )
-                        .shadow(color: Color.pink.opacity(0.2), radius: 8, x: 0, y: 4)
-                    }
-                    
-                    Button {
-                        saveSignal(isShared: false)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "lock.fill")
-                            Text("Keep mine")
-                        }
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.black.opacity(0.6))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.white.opacity(0.7))
-                        )
-                        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-                    }
+                            )
+                    )
+                    .shadow(color: Color.pink.opacity(0.2), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 24)
+            }
+        }
+        .onAppear {
+            // Load previous values if they exist
+            if let latest = myLatestSignal {
+                energy = latest.energy
+                mood = latest.mood
+                closeness = latest.closeness
             }
         }
     }
@@ -180,16 +174,28 @@ struct SignalPanelView: View {
         }
     }
     
-    private func saveSignal(isShared: Bool) {
+    private func saveSignal() {
         let signal = Signal(
             author: myName,
             energy: energy,
             mood: mood,
             closeness: closeness,
-            isShared: isShared
+            isShared: true  // Always shared!
         )
         
         modelContext.insert(signal)
+        
+        // Send notification
+        let herName = myName == "Malik" ? "Maya" : "Malik"
+        
+        NotificationHelper.shared.notifySharedSignal(
+            fromUser: myName,
+            toUser: herName,
+            energy: energy,
+            mood: mood,
+            closeness: closeness,
+            modelContext: modelContext
+        )
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()

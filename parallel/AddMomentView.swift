@@ -27,10 +27,11 @@ struct AddMomentView: View {
     
     var body: some View {
         ZStack {
-            // Soft gradient background
+            // Beautiful gradient background matching app
             LinearGradient(
                 colors: [
                     Color(red: 0.98, green: 0.97, blue: 0.99),
+                    Color(red: 0.95, green: 0.96, blue: 0.99),
                     Color(red: 0.96, green: 0.98, blue: 0.99)
                 ],
                 startPoint: .topLeading,
@@ -39,148 +40,190 @@ struct AddMomentView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.black.opacity(0.5))
-                            .frame(width: 44, height: 44)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("New Moment")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(.black.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    Color.clear
-                        .frame(width: 44, height: 44)
-                }
-                .padding(.horizontal, 8)
-                .padding(.top, 16)
-                
-                // Title field (always visible)
-                VStack(spacing: 6) {
+                // Elegant header
+                ZStack {
                     HStack {
-                        Text("Title (optional)")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundColor(.black.opacity(0.5))
+                        Button {
+                            dismiss()
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(.white.opacity(0.6))
+                                    .frame(width: 36, height: 36)
+                                
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.black.opacity(0.5))
+                            }
+                        }
+                        
                         Spacer()
                     }
                     
-                    TextField("Add a short title...", text: $momentTitle)
-                        .font(.system(size: 15, design: .rounded))
-                        .foregroundColor(.black.opacity(0.8))
-                        .accentColor(Color(red: 0.9, green: 0.4, blue: 0.5))
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.7))
-                        )
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                
-                // Type selector
-                HStack(spacing: 12) {
-                    TypeButton(
-                        icon: "text.alignleft",
-                        label: "Text",
-                        isSelected: selectedType == MomentKind.text
-                    ) {
-                        selectedType = MomentKind.text
-                    }
-                    
-                    TypeButton(
-                        icon: "photo",
-                        label: "Photo",
-                        isSelected: selectedType == MomentKind.photo
-                    ) {
-                        selectedType = MomentKind.photo
-                    }
-                    
-                    TypeButton(
-                        icon: "mic.fill",
-                        label: "Voice",
-                        isSelected: selectedType == MomentKind.voice
-                    ) {
-                        selectedType = MomentKind.voice
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 16))
+                            .foregroundColor(.pink.opacity(0.6))
+                        
+                        Text("New Moment")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundColor(.black.opacity(0.7))
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
                 
-                // Content area
-                Group {
-                    switch selectedType {
-                    case .text:
-                        textInputView
-                    case .photo:
-                        photoInputView
-                    case .voice:
-                        voiceInputView
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        // Title field with elegant styling
+                        VStack(spacing: 8) {
+                            HStack {
+                                Image(systemName: "text.quote")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.black.opacity(0.35))
+                                
+                                Text("Title (optional)")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundColor(.black.opacity(0.4))
+                                
+                                Spacer()
+                                
+                                Text("\(momentTitle.count)/\(maxTitleChars)")
+                                    .font(.system(size: 11, design: .rounded))
+                                    .foregroundColor(momentTitle.count > maxTitleChars ? .red : .black.opacity(0.3))
+                            }
+                            .padding(.horizontal, 4)
+                            
+                            TextField("Give it a name...", text: $momentTitle)
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(.black.opacity(0.8))
+                                .accentColor(Color(red: 0.9, green: 0.4, blue: 0.5))
+                                .padding(16)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(.white.opacity(0.8))
+                                        .shadow(color: .black.opacity(0.02), radius: 4, x: 0, y: 2)
+                                )
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        
+                        // Beautiful type selector
+                        VStack(spacing: 10) {
+                            HStack {
+                                Image(systemName: "square.grid.3x1.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.black.opacity(0.35))
+                                
+                                Text("Type")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundColor(.black.opacity(0.4))
+                                
+                                Spacer()
+                            }
+                            .padding(.horizontal, 24)
+                            
+                            HStack(spacing: 10) {
+                                ElegantTypeButton(
+                                    icon: "text.alignleft",
+                                    label: "Text",
+                                    color: Color(red: 0.3, green: 0.5, blue: 0.9),
+                                    isSelected: selectedType == MomentKind.text
+                                ) {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        selectedType = MomentKind.text
+                                    }
+                                    let impact = UIImpactFeedbackGenerator(style: .light)
+                                    impact.impactOccurred()
+                                }
+                                
+                                ElegantTypeButton(
+                                    icon: "photo",
+                                    label: "Photo",
+                                    color: Color(red: 0.5, green: 0.7, blue: 0.9),
+                                    isSelected: selectedType == MomentKind.photo
+                                ) {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        selectedType = MomentKind.photo
+                                    }
+                                    let impact = UIImpactFeedbackGenerator(style: .light)
+                                    impact.impactOccurred()
+                                }
+                                
+                                ElegantTypeButton(
+                                    icon: "waveform",
+                                    label: "Voice",
+                                    color: Color(red: 0.6, green: 0.4, blue: 0.9),
+                                    isSelected: selectedType == MomentKind.voice
+                                ) {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        selectedType = MomentKind.voice
+                                    }
+                                    let impact = UIImpactFeedbackGenerator(style: .light)
+                                    impact.impactOccurred()
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        // Content area with smooth transitions
+                        Group {
+                            switch selectedType {
+                            case .text:
+                                textInputView
+                            case .photo:
+                                photoInputView
+                            case .voice:
+                                voiceInputView
+                            }
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .padding(.horizontal, 20)
+                        
+                        // Bottom padding
+                        Color.clear.frame(height: 100)
                     }
                 }
-                .padding(.top, 16)
                 
                 Spacer()
+            }
+            
+            // Floating share button
+            VStack {
+                Spacer()
                 
-                // Action buttons
-                VStack(spacing: 12) {
-                    Button {
-                        saveMoment(isShared: true)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "heart.fill")
-                            Text("Share with us")
-                        }
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color(red: 0.95, green: 0.4, blue: 0.5),
-                                            Color(red: 0.9, green: 0.3, blue: 0.45)
-                                        ],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
+                Button {
+                    saveMoment()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 18))
+                        
+                        Text("Share with us")
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.95, green: 0.45, blue: 0.5),
+                                        Color(red: 0.9, green: 0.35, blue: 0.45)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
                                 )
-                        )
-                        .shadow(color: Color.pink.opacity(0.2), radius: 8, x: 0, y: 4)
-                    }
-                    .disabled(!canSave)
-                    .opacity(canSave ? 1.0 : 0.4)
-                    
-                    Button {
-                        saveMoment(isShared: false)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "lock.fill")
-                            Text("Keep mine")
-                        }
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.black.opacity(0.6))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.white.opacity(0.7))
-                        )
-                        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-                    }
-                    .disabled(!canSave)
-                    .opacity(canSave ? 1.0 : 0.4)
+                            )
+                            .shadow(color: Color.pink.opacity(canSave ? 0.25 : 0.1), radius: 16, x: 0, y: 8)
+                    )
                 }
+                .disabled(!canSave)
+                .opacity(canSave ? 1.0 : 0.5)
+                .scaleEffect(canSave ? 1.0 : 0.98)
+                .animation(.spring(response: 0.3), value: canSave)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 32)
             }
@@ -198,14 +241,31 @@ struct AddMomentView: View {
     }
     
     var textInputView: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "pencil")
+                    .font(.system(size: 11))
+                    .foregroundColor(.black.opacity(0.35))
+                
+                Text("Your thoughts")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(.black.opacity(0.4))
+                
+                Spacer()
+                
+                Text("\(momentText.count)/\(maxChars)")
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundColor(momentText.count > maxChars ? .red : .black.opacity(0.3))
+            }
+            .padding(.horizontal, 4)
+            
             ZStack(alignment: .topLeading) {
                 if momentText.isEmpty {
                     Text("What's on your mind?")
                         .font(.system(size: 16, design: .rounded))
                         .foregroundColor(.black.opacity(0.3))
                         .padding(.horizontal, 20)
-                        .padding(.top, 24)
+                        .padding(.top, 20)
                 }
                 
                 TextEditor(text: $momentText)
@@ -213,17 +273,16 @@ struct AddMomentView: View {
                     .foregroundColor(.black.opacity(0.8))
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
-                    .frame(height: 180)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 16)
+                    .frame(height: 200)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
                     .accentColor(Color(red: 0.9, green: 0.4, blue: 0.5))
             }
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(.white.opacity(0.7))
-                    .shadow(color: .black.opacity(0.03), radius: 8, x: 0, y: 4)
+                    .fill(.white.opacity(0.8))
+                    .shadow(color: .black.opacity(0.02), radius: 6, x: 0, y: 3)
             )
-            .padding(.horizontal, 20)
         }
     }
     
@@ -234,90 +293,60 @@ struct AddMomentView: View {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 260)
+                        .frame(height: 280)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 6)
+                        .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
                     
-                    HStack(spacing: 12) {
-                        Button {
+                    HStack(spacing: 10) {
+                        ElegantIconButton(icon: "camera.fill", label: "Camera") {
                             showCamera = true
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "camera")
-                                Text("Camera")
-                            }
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(.black.opacity(0.5))
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(.white.opacity(0.7))
-                            )
-                        }
-                        
-                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "photo")
-                                Text("Gallery")
-                            }
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(.black.opacity(0.5))
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(.white.opacity(0.7))
-                            )
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-            } else {
-                VStack(spacing: 20) {
-                    Image(systemName: "photo.on.rectangle.angled")
-                        .font(.system(size: 64))
-                        .foregroundColor(.black.opacity(0.15))
-                    
-                    HStack(spacing: 12) {
-                        Button {
-                            showCamera = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "camera.fill")
-                                Text("Camera")
-                            }
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 20)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [
-                                                Color(red: 0.4, green: 0.6, blue: 0.9),
-                                                Color(red: 0.3, green: 0.5, blue: 0.85)
-                                            ],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                            )
-                            .shadow(color: Color.blue.opacity(0.2), radius: 6, x: 0, y: 3)
                         }
                         
                         PhotosPicker(selection: $selectedPhoto, matching: .images) {
                             HStack(spacing: 8) {
                                 Image(systemName: "photo.fill")
+                                    .font(.system(size: 14))
                                 Text("Gallery")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
                             }
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(.black.opacity(0.6))
+                            .padding(.horizontal, 18)
                             .padding(.vertical, 12)
-                            .padding(.horizontal, 20)
                             .background(
-                                RoundedRectangle(cornerRadius: 12)
+                                Capsule()
+                                    .fill(.white.opacity(0.8))
+                                    .shadow(color: .black.opacity(0.03), radius: 4, x: 0, y: 2)
+                            )
+                        }
+                    }
+                }
+            } else {
+                VStack(spacing: 20) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.system(size: 52))
+                        .foregroundColor(.black.opacity(0.15))
+                    
+                    Text("Add a photo")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundColor(.black.opacity(0.4))
+                    
+                    HStack(spacing: 12) {
+                        ElegantIconButton(icon: "camera.fill", label: "Camera") {
+                            showCamera = true
+                        }
+                        
+                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "photo.fill")
+                                    .font(.system(size: 14))
+                                Text("Gallery")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 14)
+                            .background(
+                                Capsule()
                                     .fill(
                                         LinearGradient(
                                             colors: [
@@ -328,25 +357,24 @@ struct AddMomentView: View {
                                             endPoint: .trailing
                                         )
                                     )
+                                    .shadow(color: Color.blue.opacity(0.2), radius: 8, x: 0, y: 4)
                             )
-                            .shadow(color: Color.blue.opacity(0.2), radius: 6, x: 0, y: 3)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 260)
+                .frame(height: 280)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(.white.opacity(0.4))
+                        .fill(.white.opacity(0.5))
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
                                 .strokeBorder(
-                                    style: StrokeStyle(lineWidth: 2, dash: [8])
+                                    style: StrokeStyle(lineWidth: 2, dash: [10, 5])
                                 )
                                 .foregroundColor(.black.opacity(0.1))
                         )
                 )
-                .padding(.horizontal, 20)
             }
         }
     }
@@ -354,105 +382,139 @@ struct AddMomentView: View {
     var voiceInputView: some View {
         VStack(spacing: 24) {
             if hasRecording {
-                VStack(spacing: 16) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 64))
-                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
+                VStack(spacing: 20) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.15))
+                            .frame(width: 100, height: 100)
+                        
+                        Image(systemName: "waveform")
+                            .font(.system(size: 42))
+                            .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
+                    }
                     
-                    Text(formatTime(recordingTime))
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.black.opacity(0.7))
-                        .monospacedDigit()
-                    
-                    Text("Recording saved")
-                        .font(.system(size: 15, design: .rounded))
-                        .foregroundColor(.black.opacity(0.4))
+                    VStack(spacing: 6) {
+                        Text(formatTime(recordingTime))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.black.opacity(0.7))
+                            .monospacedDigit()
+                        
+                        Text("Recording saved")
+                            .font(.system(size: 14, design: .rounded))
+                            .foregroundColor(.black.opacity(0.4))
+                    }
                     
                     Button {
                         deleteRecording()
                     } label: {
                         HStack(spacing: 8) {
-                            Image(systemName: "trash")
-                            Text("Delete & Re-record")
+                            Image(systemName: "arrow.counterclockwise")
+                            Text("Re-record")
                         }
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(.red.opacity(0.7))
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 20)
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundColor(.red.opacity(0.6))
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.7))
+                            Capsule()
+                                .fill(.white.opacity(0.8))
                         )
                     }
                 }
+                .frame(height: 280)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.05))
+                )
             } else if isRecording {
-                VStack(spacing: 16) {
+                VStack(spacing: 20) {
                     ZStack {
                         Circle()
                             .fill(Color.red.opacity(0.1))
-                            .frame(width: 120, height: 120)
+                            .frame(width: 100, height: 100)
                         
                         Circle()
                             .fill(Color.red)
-                            .frame(width: 80, height: 80)
+                            .frame(width: 60, height: 60)
                             .overlay(
                                 Circle()
                                     .stroke(Color.red.opacity(0.3), lineWidth: 3)
-                                    .scaleEffect(1.3)
+                                    .scaleEffect(1.5)
                                     .opacity(0.8)
                             )
                     }
                     
-                    Text(formatTime(recordingTime))
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.black.opacity(0.7))
-                        .monospacedDigit()
-                    
-                    Text("Recording...")
-                        .font(.system(size: 15, design: .rounded))
-                        .foregroundColor(.black.opacity(0.4))
+                    VStack(spacing: 6) {
+                        Text(formatTime(recordingTime))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.black.opacity(0.7))
+                            .monospacedDigit()
+                        
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                            
+                            Text("Recording...")
+                                .font(.system(size: 14, design: .rounded))
+                                .foregroundColor(.red.opacity(0.8))
+                        }
+                    }
                     
                     Button {
                         stopRecording()
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "stop.fill")
-                            Text("Stop Recording")
+                            Text("Stop")
                         }
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
+                        .padding(.horizontal, 32)
                         .padding(.vertical, 14)
-                        .padding(.horizontal, 28)
                         .background(
-                            RoundedRectangle(cornerRadius: 14)
+                            Capsule()
                                 .fill(Color.red)
+                                .shadow(color: Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
                         )
-                        .shadow(color: Color.red.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
                 }
+                .frame(height: 280)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.red.opacity(0.05))
+                )
             } else {
                 VStack(spacing: 20) {
                     Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.6))
+                        .font(.system(size: 64))
+                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.5))
                     
-                    Text("Tap to record")
-                        .font(.system(size: 17, weight: .medium, design: .rounded))
-                        .foregroundColor(.black.opacity(0.4))
+                    VStack(spacing: 6) {
+                        Text("Record a voice note")
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundColor(.black.opacity(0.5))
+                        
+                        Text("Up to 20 seconds")
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundColor(.black.opacity(0.3))
+                    }
                     
                     Button {
                         startRecording()
                     } label: {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             Image(systemName: "mic.fill")
                             Text("Start Recording")
                         }
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                        .padding(.vertical, 14)
                         .padding(.horizontal, 28)
+                        .padding(.vertical, 14)
                         .background(
-                            RoundedRectangle(cornerRadius: 14)
+                            Capsule()
                                 .fill(
                                     LinearGradient(
                                         colors: [
@@ -463,19 +525,18 @@ struct AddMomentView: View {
                                         endPoint: .trailing
                                     )
                                 )
+                                .shadow(color: Color.purple.opacity(0.25), radius: 10, x: 0, y: 5)
                         )
-                        .shadow(color: Color.purple.opacity(0.2), radius: 8, x: 0, y: 4)
                     }
                 }
+                .frame(height: 280)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.white.opacity(0.5))
+                )
             }
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 260)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.4))
-        )
-        .padding(.horizontal, 20)
     }
     
     var canSave: Bool {
@@ -491,12 +552,13 @@ struct AddMomentView: View {
         }
     }
     
-    private func saveMoment(isShared: Bool) {
+    private func saveMoment() {
+        let isShared = true
+        
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         var savedPhotoPath: String?
         var savedAudioPath: String?
         
-        // Save photo if needed
         if selectedType == MomentKind.photo, let photoData {
             let photoFileName = "\(UUID().uuidString).jpg"
             let photoURL = documentsPath.appendingPathComponent(photoFileName)
@@ -504,7 +566,6 @@ struct AddMomentView: View {
             savedPhotoPath = photoFileName
         }
         
-        // Audio path already set if voice
         if selectedType == MomentKind.voice {
             savedAudioPath = audioPath
         }
@@ -520,6 +581,18 @@ struct AddMomentView: View {
         )
         
         modelContext.insert(moment)
+        
+        if isShared {
+            let herName = myName == "Malik" ? "Maya" : "Malik"
+            
+            NotificationHelper.shared.notifySharedMoment(
+                fromUser: myName,
+                toUser: herName,
+                momentType: selectedType,
+                title: momentTitle.isEmpty ? nil : momentTitle,
+                modelContext: modelContext
+            )
+        }
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
@@ -555,7 +628,6 @@ struct AddMomentView: View {
             recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
                 recordingTime += 0.1
                 
-                // Max 20 seconds
                 if recordingTime >= 20 {
                     stopRecording()
                 }
@@ -600,27 +672,65 @@ struct AddMomentView: View {
     }
 }
 
-struct TypeButton: View {
+struct ElegantTypeButton: View {
     let icon: String
     let label: String
+    let color: Color
     let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? color.opacity(0.15) : .white.opacity(0.6))
+                        .frame(width: 54, height: 54)
+                        .shadow(color: isSelected ? color.opacity(0.2) : .black.opacity(0.02), radius: isSelected ? 8 : 4, x: 0, y: isSelected ? 4 : 2)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 22))
+                        .foregroundColor(isSelected ? color : .black.opacity(0.4))
+                }
+                
                 Text(label)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium, design: .rounded))
+                    .foregroundColor(isSelected ? color : .black.opacity(0.4))
             }
-            .foregroundColor(isSelected ? .white : .black.opacity(0.5))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+        }
+    }
+}
+
+struct ElegantIconButton: View {
+    let icon: String
+    let label: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                Text(label)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
             .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.black.opacity(0.75) : .white.opacity(0.5))
-                    .shadow(color: .black.opacity(isSelected ? 0.1 : 0.03), radius: 6, x: 0, y: 3)
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.4, green: 0.6, blue: 0.9),
+                                Color(red: 0.3, green: 0.5, blue: 0.85)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .shadow(color: Color.blue.opacity(0.2), radius: 8, x: 0, y: 4)
             )
         }
     }

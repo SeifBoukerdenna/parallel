@@ -13,12 +13,10 @@ struct PixelBucket: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Row 1 - Handle left curve
+            // Row 1 - Handle left
             HStack(spacing: 0) {
                 pixel(.clear)
                 pixel(handleColor)
-                pixel(.clear)
-                pixel(.clear)
                 pixel(.clear)
                 pixel(.clear)
                 pixel(.clear)
@@ -30,32 +28,15 @@ struct PixelBucket: View {
             HStack(spacing: 0) {
                 pixel(handleColor)
                 pixel(.clear)
-                pixel(handleColor)
                 pixel(.clear)
                 pixel(.clear)
-                pixel(.clear)
-                pixel(handleColor)
-                pixel(.clear)
-                pixel(handleColor)
-            }
-            
-            // Row 3 - Handle connection to rim
-            HStack(spacing: 0) {
-                pixel(handleColor)
-                pixel(.clear)
-                pixel(.clear)
-                pixel(handleColor)
-                pixel(handleColor)
-                pixel(handleColor)
                 pixel(.clear)
                 pixel(.clear)
                 pixel(handleColor)
             }
             
-            // Row 4 - Bucket top rim
+            // Row 3 - Bucket rim
             HStack(spacing: 0) {
-                pixel(bucketColor)
-                pixel(bucketColor)
                 pixel(bucketColor)
                 pixel(bucketColor)
                 pixel(bucketColor)
@@ -65,64 +46,43 @@ struct PixelBucket: View {
                 pixel(bucketColor)
             }
             
-            // Row 5 - Bucket upper body with highlight
+            // Row 4 - Upper body
             HStack(spacing: 0) {
                 pixel(bucketColor)
-                pixel(.white)
-                pixel(.white)
-                pixel(bucketColor.opacity(0.8))
-                pixel(bucketColor.opacity(0.8))
-                pixel(bucketColor.opacity(0.8))
-                pixel(.white)
-                pixel(.white)
+                pixel(.white.opacity(0.5))
+                pixel(bucketColor.opacity(0.7))
+                pixel(bucketColor.opacity(0.7))
+                pixel(bucketColor.opacity(0.7))
+                pixel(.white.opacity(0.5))
                 pixel(bucketColor)
             }
             
-            // Row 6 - Bucket middle
+            // Row 5 - Middle
             HStack(spacing: 0) {
                 pixel(bucketColor)
-                pixel(.white)
-                pixel(bucketColor.opacity(0.8))
-                pixel(bucketColor.opacity(0.6))
-                pixel(bucketColor.opacity(0.6))
-                pixel(bucketColor.opacity(0.6))
-                pixel(bucketColor.opacity(0.8))
-                pixel(.white)
+                pixel(bucketColor.opacity(0.7))
+                pixel(bucketColor.opacity(0.5))
+                pixel(bucketColor.opacity(0.5))
+                pixel(bucketColor.opacity(0.5))
+                pixel(bucketColor.opacity(0.7))
                 pixel(bucketColor)
             }
             
-            // Row 7 - Bucket lower body narrowing
+            // Row 6 - Lower narrowing
             HStack(spacing: 0) {
                 pixel(.clear)
                 pixel(bucketColor)
-                pixel(.white)
                 pixel(bucketColor.opacity(0.7))
                 pixel(bucketColor.opacity(0.6))
                 pixel(bucketColor.opacity(0.7))
-                pixel(.white)
                 pixel(bucketColor)
                 pixel(.clear)
             }
             
-            // Row 8 - Bucket lower narrowing
-            HStack(spacing: 0) {
-                pixel(.clear)
-                pixel(bucketColor)
-                pixel(bucketColor.opacity(0.9))
-                pixel(bucketColor.opacity(0.7))
-                pixel(bucketColor.opacity(0.6))
-                pixel(bucketColor.opacity(0.7))
-                pixel(bucketColor.opacity(0.9))
-                pixel(bucketColor)
-                pixel(.clear)
-            }
-            
-            // Row 9 - Bucket bottom rim
+            // Row 7 - Bottom rim
             HStack(spacing: 0) {
                 pixel(.clear)
                 pixel(.clear)
-                pixel(bucketColor)
-                pixel(bucketColor)
                 pixel(bucketColor)
                 pixel(bucketColor)
                 pixel(bucketColor)

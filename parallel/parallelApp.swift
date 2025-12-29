@@ -3,22 +3,21 @@ import SwiftData
 
 @main
 struct parallelApp: App {
-    // Add AppDelegate for push notifications
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Moment.self,
             Signal.self,
-            BucketItem.self,  // FIXED: Added BucketItem to schema!
-            UserSettings.self,  // For syncing nicknames and poses
+            BucketItem.self,
+            UserSettings.self,
+            Ping.self,  // NEW! Comic-style quick messages
         ])
         
-        // Enable CloudKit syncing for real-time updates between devices
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic  // Enable iCloud sync
+            cloudKitDatabase: .automatic
         )
 
         do {

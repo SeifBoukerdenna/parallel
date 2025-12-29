@@ -1,11 +1,16 @@
 import SwiftUI
 import UserNotifications
+import SwiftData
 
 class NotificationManager: NSObject, ObservableObject {
     static let shared = NotificationManager()
     
     @Published var deviceToken: String?
     @Published var notificationPermissionGranted = false
+    
+    // Store modelContext reference for token registration
+    var modelContext: ModelContext?
+    var currentUserName: String?
     
     override private init() {
         super.init()
@@ -62,6 +67,21 @@ class NotificationManager: NSObject, ObservableObject {
         self.deviceToken = tokenString
         print("📱 Device Token: \(tokenString)")
         print("✅ Copy this token to test notifications from Apple Push Notifications dashboard!")
+        
+        // Register with NotificationHelper using CloudKit
+        if let userName = currentUserName, let modelContext = modelContext {
+            NotificationHelper.shared.registerDeviceToken(
+                tokenString,
+                forUser: userName,
+                modelContext: modelContext
+            )
+        }
+    }
+    
+    func configure(userName: String, modelContext: ModelContext) {
+        self.currentUserName = userName
+        self.modelContext = modelContext
+        print("✅ NotificationManager configured for user: \(userName)")
     }
 }
 

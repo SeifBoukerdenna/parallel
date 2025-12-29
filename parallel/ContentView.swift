@@ -6,9 +6,9 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Moment.createdAt, order: .reverse) private var moments: [Moment]
     @Query(sort: \Signal.createdAt, order: .reverse) private var signals: [Signal]
+    @Query(sort: \Ping.createdAt, order: .reverse) private var pings: [Ping]
     @Query private var userSettings: [UserSettings]
     
-    // Store which user this phone belongs to
     @AppStorage("currentUserName") private var currentUserName: String?
     
     @State private var breathingOffset: CGFloat = 0
@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var showSignalPanel = false
     @State private var showBucketList = false
     @State private var showTimeline = false
+    @State private var showSignalTimeline = false
     @State private var showChevronHint = true
     @State private var showBucketHint = true
     @State private var selectedCharacter: String?
@@ -23,16 +24,14 @@ struct ContentView: View {
     @State private var audioPlayer: AVAudioPlayer?
     @State private var buttonPressed = false
     @State private var showDeviceToken = false
+    @State private var showAddPing = false
     
-    // The two names in the relationship
     let malikName = "Malik"
     let mayaName = "Maya"
     
-    // CUSTOM CHARACTER IMAGES
     let malikCharacterImage: String? = "malik_8bit"
     let mayaCharacterImage: String? = "maya_8bit"
     
-    // Which name is "me" and which is "them"
     var myName: String {
         currentUserName ?? malikName
     }
@@ -45,7 +44,6 @@ struct ContentView: View {
         }
     }
     
-    // Get character images based on who I am
     var myCharacterImage: String? {
         myName == malikName ? malikCharacterImage : mayaCharacterImage
     }
@@ -54,7 +52,6 @@ struct ContentView: View {
         herName == malikName ? malikCharacterImage : mayaCharacterImage
     }
     
-    // Get user settings from database (synced via CloudKit)
     var mySettings: UserSettings? {
         userSettings.first(where: { $0.userName == myName })
     }
@@ -91,7 +88,6 @@ struct ContentView: View {
         herLatestSignal != nil
     }
     
-    // Get available poses
     var myAvailablePoses: [String] {
         let poses = CharacterPoses.poses(for: myName)
         return poses.isEmpty ? [] : poses
@@ -102,7 +98,6 @@ struct ContentView: View {
         return poses.isEmpty ? [] : poses
     }
     
-    // Get current pose images based on synced settings
     var currentMyPoseImage: String? {
         if myAvailablePoses.isEmpty {
             return myCharacterImage
@@ -119,13 +114,20 @@ struct ContentView: View {
         return herAvailablePoses[index % herAvailablePoses.count]
     }
     
+    // PERSISTENT PINGS - Always show the LATEST ping from each person
+    var myLatestPing: Ping? {
+        pings.first(where: { $0.author == myName && !$0.isRead })
+    }
+    
+    var herLatestPing: Ping? {
+        pings.first(where: { $0.author == herName && !$0.isRead })
+    }
+    
     var body: some View {
         Group {
             if currentUserName == nil {
-                // Show onboarding if user hasn't selected their name
                 OnboardingView(selectedName: $currentUserName)
             } else {
-                // Show main app
                 mainAppView
             }
         }
@@ -134,23 +136,46 @@ struct ContentView: View {
     var mainAppView: some View {
         GeometryReader { geometry in
             ZStack {
-                // Background
                 HStack(spacing: 0) {
                     Color(red: 0.96, green: 0.97, blue: 0.98)
                     Color(red: 0.98, green: 0.96, blue: 0.97)
                 }
                 .ignoresSafeArea()
                 
-                // Center line
                 Rectangle()
                     .fill(.black.opacity(0.08))
                     .frame(width: 1.5)
                 
-                // Main content
                 VStack {
-                    // Top bar with settings button
+                    // Top bar
                     HStack {
                         Spacer()
+                        
+                        Button {
+                            showTimeline = true
+                        } label: {
+                            Image(systemName: "photo.stack")
+                                .font(.system(size: 16))
+                                .foregroundColor(.black.opacity(0.3))
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(.white.opacity(0.5))
+                                )
+                        }
+                        
+                        Button {
+                            showSignalTimeline = true
+                        } label: {
+                            Image(systemName: "waveform.path.ecg")
+                                .font(.system(size: 16))
+                                .foregroundColor(.black.opacity(0.3))
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(.white.opacity(0.5))
+                                )
+                        }
                         
                         Button {
                             showDeviceToken = true
@@ -168,7 +193,6 @@ struct ContentView: View {
                         .padding(.top, 16)
                     }
                     
-                    // Pixel bucket at top with hint
                     VStack(spacing: 8) {
                         if showBucketHint {
                             Image(systemName: "chevron.down")
@@ -190,7 +214,6 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: geometry.size.height * 0.05)
                     
-                    // Heart with closeness indicator
                     VStack(spacing: 8) {
                         HeartPixel()
                             .scaleEffect(heartScale)
@@ -198,7 +221,6 @@ struct ContentView: View {
                             .shadow(color: .pink.opacity(heartGlow), radius: 20)
                             .offset(y: breathingOffset * 2)
                         
-                        // Swipe hint
                         if showChevronHint {
                             Image(systemName: "chevron.up")
                                 .font(.system(size: 12, weight: .medium))
@@ -210,8 +232,9 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: 40)
                     
-                    // Characters with names and nicknames
+                    // Characters with PERSISTENT speech bubbles!
                     HStack(spacing: 0) {
+                        // My character with bubble
                         VStack {
                             VStack(spacing: 2) {
                                 HStack(spacing: 4) {
@@ -224,7 +247,6 @@ struct ContentView: View {
                                         .frame(width: 8, height: 8)
                                 }
                                 
-                                // Nickname below name
                                 if let nickname = mySettings?.nickname, !nickname.isEmpty {
                                     Text(nickname)
                                         .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -233,23 +255,43 @@ struct ContentView: View {
                                 }
                             }
                             
-                            CharacterView(
-                                imageName: currentMyPoseImage,
-                                skinColor: Color(red: 0.95, green: 0.8, blue: 0.7),
-                                hairColor: Color(red: 0.4, green: 0.25, blue: 0.15),
-                                shirtColor: Color(red: 0.2, green: 0.4, blue: 0.8),
-                                breathingOffset: breathingOffset,
-                                scale: 1.0
-                            )
-                            .padding(.top, 16)
-                            .onTapGesture {
-                                let impact = UIImpactFeedbackGenerator(style: .light)
-                                impact.impactOccurred()
-                                selectedCharacter = myName
+                            ZStack(alignment: .top) {
+                                CharacterView(
+                                    imageName: currentMyPoseImage,
+                                    skinColor: Color(red: 0.95, green: 0.8, blue: 0.7),
+                                    hairColor: Color(red: 0.4, green: 0.25, blue: 0.15),
+                                    shirtColor: Color(red: 0.2, green: 0.4, blue: 0.8),
+                                    breathingOffset: breathingOffset,
+                                    scale: 1.0
+                                )
+                                .padding(.top, 16)
+                                .onTapGesture {
+                                    let impact = UIImpactFeedbackGenerator(style: .light)
+                                    impact.impactOccurred()
+                                    selectedCharacter = myName
+                                }
+                                .onLongPressGesture(minimumDuration: 0.5) {
+                                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                                    impact.impactOccurred()
+                                    showAddPing = true
+                                }
+                                
+                                // My PERSISTENT speech bubble (always shows latest)
+                                if let ping = myLatestPing {
+                                    ComicSpeechBubble(
+                                        message: ping.message,
+                                        isMyMessage: true
+                                    ) {
+                                        dismissPing(ping)
+                                    }
+                                    .padding(.bottom, 240)
+                                    .transition(.scale.combined(with: .opacity))
+                                }
                             }
                         }
                         .frame(maxWidth: .infinity)
                         
+                        // Her character with bubble
                         VStack {
                             VStack(spacing: 2) {
                                 HStack(spacing: 4) {
@@ -262,7 +304,6 @@ struct ContentView: View {
                                         .frame(width: 8, height: 8)
                                 }
                                 
-                                // Nickname below name
                                 if let nickname = herSettings?.nickname, !nickname.isEmpty {
                                     Text(nickname)
                                         .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -271,19 +312,33 @@ struct ContentView: View {
                                 }
                             }
                             
-                            CharacterView(
-                                imageName: currentHerPoseImage,
-                                skinColor: Color(red: 0.98, green: 0.85, blue: 0.75),
-                                hairColor: Color(red: 0.95, green: 0.8, blue: 0.3),
-                                shirtColor: Color(red: 0.9, green: 0.2, blue: 0.3),
-                                breathingOffset: breathingOffset,
-                                scale: 1.0
-                            )
-                            .padding(.top, 16)
-                            .onTapGesture {
-                                let impact = UIImpactFeedbackGenerator(style: .light)
-                                impact.impactOccurred()
-                                selectedCharacter = herName
+                            ZStack(alignment: .top) {
+                                CharacterView(
+                                    imageName: currentHerPoseImage,
+                                    skinColor: Color(red: 0.98, green: 0.85, blue: 0.75),
+                                    hairColor: Color(red: 0.95, green: 0.8, blue: 0.3),
+                                    shirtColor: Color(red: 0.9, green: 0.2, blue: 0.3),
+                                    breathingOffset: breathingOffset,
+                                    scale: 1.0
+                                )
+                                .padding(.top, 16)
+                                .onTapGesture {
+                                    let impact = UIImpactFeedbackGenerator(style: .light)
+                                    impact.impactOccurred()
+                                    selectedCharacter = herName
+                                }
+                                
+                                // Her PERSISTENT speech bubble (always shows latest)
+                                if let ping = herLatestPing {
+                                    ComicSpeechBubble(
+                                        message: ping.message,
+                                        isMyMessage: false
+                                    ) {
+                                        dismissPing(ping)
+                                    }
+                                    .padding(.bottom, 240)
+                                    .transition(.scale.combined(with: .opacity))
+                                }
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -291,7 +346,6 @@ struct ContentView: View {
                     
                     Spacer()
                     
-                    // Latest shared moment preview
                     if let moment = latestSharedMoment {
                         momentPreviewView(moment: moment)
                             .onTapGesture {
@@ -301,13 +355,11 @@ struct ContentView: View {
                     
                     Spacer()
                     
-                    // Micro-copy
                     Text("Two lives. Sometimes touching.")
                         .font(.system(size: 12, design: .rounded))
                         .foregroundColor(.black.opacity(0.25))
                         .padding(.bottom, 12)
                     
-                    // Simplified pixel art button
                     PixelButton()
                         .scaleEffect(buttonPressed ? 0.9 : 1.0)
                         .onTapGesture {
@@ -331,14 +383,12 @@ struct ContentView: View {
             .gesture(
                 DragGesture(minimumDistance: 20)
                     .onEnded { value in
-                        // Swipe up for signals
                         if value.translation.height < -50 {
                             let impact = UIImpactFeedbackGenerator(style: .light)
                             impact.impactOccurred()
                             showSignalPanel = true
                             showChevronHint = false
                         }
-                        // Swipe down for bucket list
                         else if value.translation.height > 50 {
                             let impact = UIImpactFeedbackGenerator(style: .light)
                             impact.impactOccurred()
@@ -364,6 +414,14 @@ struct ContentView: View {
         .sheet(isPresented: $showTimeline) {
             MomentTimelineView(myName: myName, herName: herName)
         }
+        .sheet(isPresented: $showSignalTimeline) {
+            SignalTimelineView(myName: myName, herName: herName)
+        }
+        .sheet(isPresented: $showAddPing) {
+            AddPingView(myName: myName)
+                .presentationDetents([.height(420)])
+                .presentationDragIndicator(.visible)
+        }
         .sheet(item: $selectedCharacter) { character in
             CharacterProfileView(
                 characterName: character,
@@ -380,19 +438,23 @@ struct ContentView: View {
             DeviceTokenView()
         }
         .onAppear {
-            // Initialize user settings if they don't exist
+            if let userName = currentUserName {
+                NotificationManager.shared.configure(
+                    userName: userName,
+                    modelContext: modelContext
+                )
+            }
+            
             initializeUserSettings()
             
             withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
                 breathingOffset = -5
             }
             
-            // Chevron hint animation (swipe up)
             withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
                 showChevronHint = true
             }
             
-            // Bucket hint animation (swipe down)
             withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true).delay(1.5)) {
                 showBucketHint = true
             }
@@ -408,11 +470,12 @@ struct ContentView: View {
                     showBucketHint.toggle()
                 }
             }
+            
+            // NO MORE AUTO-DISMISS TIMER! Pings are persistent!
         }
     }
     
     private func initializeUserSettings() {
-        // Create user settings for both users if they don't exist
         if userSettings.first(where: { $0.userName == malikName }) == nil {
             let settings = UserSettings(userName: malikName)
             modelContext.insert(settings)
@@ -421,6 +484,12 @@ struct ContentView: View {
         if userSettings.first(where: { $0.userName == mayaName }) == nil {
             let settings = UserSettings(userName: mayaName)
             modelContext.insert(settings)
+        }
+    }
+    
+    private func dismissPing(_ ping: Ping) {
+        withAnimation(.spring(response: 0.3)) {
+            ping.markAsRead()
         }
     }
     

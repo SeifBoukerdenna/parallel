@@ -40,7 +40,7 @@ struct CharacterView: View {
 
 // Character poses configuration
 struct CharacterPoses {
-    static let alexPoses: [String] = ["malik_8bit"] // Add more as needed
+    static let alexPoses: [String] = ["malik_8bit", "malik_moody", "malik_happy"] // Add more as needed
     static let mayaPoses: [String] = ["maya_8bit", "maya_love", "maya_moody"] // Add more poses
     
     static func poses(for name: String) -> [String] {

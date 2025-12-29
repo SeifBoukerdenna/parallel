@@ -150,35 +150,46 @@ struct CharacterProfileView: View {
                                     .font(.system(size: 32, weight: .black, design: .rounded))
                                     .foregroundColor(.black.opacity(0.6))
                                 
-                                // Nickname display/editor
-                                if let nickname = userSettings?.nickname, !nickname.isEmpty {
-                                    Button {
-                                        editingNickname = nickname
-                                        showNicknameEditor = true
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            Text(nickname)
-                                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                                .foregroundColor(.black.opacity(0.35))
-                                                .italic()
-                                            
-                                            Image(systemName: "pencil")
-                                                .font(.system(size: 11))
-                                                .foregroundColor(.black.opacity(0.25))
+                                // Nickname display/editor - ONLY for OTHER person
+                                if !isMe {
+                                    // I can edit HER nickname
+                                    if let nickname = userSettings?.nickname, !nickname.isEmpty {
+                                        Button {
+                                            editingNickname = nickname
+                                            showNicknameEditor = true
+                                        } label: {
+                                            HStack(spacing: 6) {
+                                                Text(nickname)
+                                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                    .foregroundColor(.black.opacity(0.35))
+                                                    .italic()
+                                                
+                                                Image(systemName: "pencil")
+                                                    .font(.system(size: 11))
+                                                    .foregroundColor(.black.opacity(0.25))
+                                            }
+                                        }
+                                    } else {
+                                        Button {
+                                            editingNickname = ""
+                                            showNicknameEditor = true
+                                        } label: {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "plus.circle")
+                                                    .font(.system(size: 12))
+                                                Text("Add nickname for \(characterName)")
+                                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                            }
+                                            .foregroundColor(.black.opacity(0.3))
                                         }
                                     }
                                 } else {
-                                    Button {
-                                        editingNickname = ""
-                                        showNicknameEditor = true
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "plus.circle")
-                                                .font(.system(size: 12))
-                                            Text("Add nickname")
-                                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                        }
-                                        .foregroundColor(.black.opacity(0.3))
+                                    // Just display my nickname if it exists (can't edit my own)
+                                    if let nickname = userSettings?.nickname, !nickname.isEmpty {
+                                        Text(nickname)
+                                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                                            .foregroundColor(.black.opacity(0.35))
+                                            .italic()
                                     }
                                 }
                             }
@@ -403,6 +414,7 @@ struct CharacterProfileView: View {
         }
         .sheet(isPresented: $showNicknameEditor) {
             NicknameEditorView(
+                characterName: characterName,
                 currentNickname: editingNickname,
                 onSave: { newNickname in
                     updateNickname(newNickname)
@@ -431,12 +443,14 @@ struct CharacterProfileView: View {
 // Simple nickname editor
 struct NicknameEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    let characterName: String
     let currentNickname: String
     let onSave: (String) -> Void
     
     @State private var nickname: String
     
-    init(currentNickname: String, onSave: @escaping (String) -> Void) {
+    init(characterName: String, currentNickname: String, onSave: @escaping (String) -> Void) {
+        self.characterName = characterName
         self.currentNickname = currentNickname
         self.onSave = onSave
         _nickname = State(initialValue: currentNickname)
@@ -461,7 +475,7 @@ struct NicknameEditorView: View {
                     .frame(width: 40, height: 5)
                     .padding(.top, 12)
                 
-                Text("Set Nickname")
+                Text("Nickname for \(characterName)")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.black.opacity(0.7))
                 
