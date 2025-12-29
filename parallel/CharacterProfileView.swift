@@ -11,10 +11,13 @@ struct CharacterProfileView: View {
     let isMe: Bool
     let myName: String
     let herName: String
+    let myCharacterImage: String?
+    let herCharacterImage: String?
     
     @State private var selectedMoment: Moment?
     @State private var searchText = ""
     @State private var isSearching = false
+    @State private var currentPoseIndex = 0
     
     var characterMoments: [Moment] {
         moments.filter { $0.author == characterName }
@@ -46,6 +49,20 @@ struct CharacterProfileView: View {
     
     var accentColor: Color {
         isMe ? Color(red: 0.3, green: 0.5, blue: 0.9) : Color(red: 0.9, green: 0.4, blue: 0.5)
+    }
+    
+    // Get available poses for this character
+    var availablePoses: [String] {
+        let poses = CharacterPoses.poses(for: characterName)
+        return poses.isEmpty ? [] : poses
+    }
+    
+    // Get current pose image name
+    var currentPoseImage: String? {
+        if availablePoses.isEmpty {
+            return isMe ? myCharacterImage : herCharacterImage
+        }
+        return availablePoses[currentPoseIndex % availablePoses.count]
     }
     
     var body: some View {
@@ -122,39 +139,137 @@ struct CharacterProfileView: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        // Character display
-                        VStack(spacing: 16) {
+                        // Character display with pose controls
+                        VStack(spacing: 12) {
                             Text(characterName.uppercased())
                                 .font(.system(size: 32, weight: .black, design: .rounded))
                                 .foregroundColor(.black.opacity(0.6))
                             
+                            // Character with smaller scale in profile
                             if isMe {
-                                PixelCharacter(
+                                CharacterView(
+                                    imageName: currentPoseImage,
                                     skinColor: Color(red: 0.95, green: 0.8, blue: 0.7),
                                     hairColor: Color(red: 0.4, green: 0.25, blue: 0.15),
                                     shirtColor: Color(red: 0.2, green: 0.4, blue: 0.8),
-                                    breathingOffset: 0
+                                    breathingOffset: 0,
+                                    scale: 0.8
                                 )
-                                .scaleEffect(1.5)
                             } else {
-                                PixelCharacter(
+                                CharacterView(
+                                    imageName: currentPoseImage,
                                     skinColor: Color(red: 0.98, green: 0.85, blue: 0.75),
                                     hairColor: Color(red: 0.95, green: 0.8, blue: 0.3),
                                     shirtColor: Color(red: 0.9, green: 0.2, blue: 0.3),
-                                    breathingOffset: 0
+                                    breathingOffset: 0,
+                                    scale: 0.8
                                 )
-                                .scaleEffect(1.5)
+                            }
+                            
+                            // Pose controls (only show if multiple poses available)
+                            if !availablePoses.isEmpty && availablePoses.count > 1 {
+                                HStack(spacing: 12) {
+                                    // Previous pose
+                                    Button {
+                                        withAnimation(.spring(response: 0.3)) {
+                                            currentPoseIndex = (currentPoseIndex - 1 + availablePoses.count) % availablePoses.count
+                                        }
+                                        let impact = UIImpactFeedbackGenerator(style: .light)
+                                        impact.impactOccurred()
+                                    } label: {
+                                        Image(systemName: "chevron.left")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.black.opacity(0.6))
+                                            .frame(width: 36, height: 36)
+                                            .background(
+                                                Circle()
+                                                    .fill(.white.opacity(0.7))
+                                            )
+                                    }
+                                    
+                                    // Randomize pose
+                                    Button {
+                                        withAnimation(.spring(response: 0.3)) {
+                                            currentPoseIndex = Int.random(in: 0..<availablePoses.count)
+                                        }
+                                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                                        impact.impactOccurred()
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "shuffle")
+                                                .font(.system(size: 13))
+                                            Text("Random Pose")
+                                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                        }
+                                        .foregroundColor(.black.opacity(0.6))
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            Capsule()
+                                                .fill(.white.opacity(0.7))
+                                        )
+                                    }
+                                    
+                                    // Next pose
+                                    Button {
+                                        withAnimation(.spring(response: 0.3)) {
+                                            currentPoseIndex = (currentPoseIndex + 1) % availablePoses.count
+                                        }
+                                        let impact = UIImpactFeedbackGenerator(style: .light)
+                                        impact.impactOccurred()
+                                    } label: {
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.black.opacity(0.6))
+                                            .frame(width: 36, height: 36)
+                                            .background(
+                                                Circle()
+                                                    .fill(.white.opacity(0.7))
+                                            )
+                                    }
+                                }
+                                .padding(.top, 8)
+                                
+                                // Pose indicator dots
+                                HStack(spacing: 6) {
+                                    ForEach(0..<availablePoses.count, id: \.self) { index in
+                                        Circle()
+                                            .fill(index == currentPoseIndex ? accentColor : Color.black.opacity(0.2))
+                                            .frame(width: 6, height: 6)
+                                    }
+                                }
+                                .padding(.top, 4)
                             }
                         }
                         .padding(.top, 20)
+                        .padding(.bottom, 16)
                         
                         // Latest signal
                         if let signal = latestSignal {
                             VStack(spacing: 12) {
-                                Text("Latest Signal")
-                                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                                    .foregroundColor(.black.opacity(0.4))
-                                    .padding(.top, 24)
+                                HStack {
+                                    Text("Latest Signal")
+                                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                                        .foregroundColor(.black.opacity(0.4))
+                                    
+                                    Spacer()
+                                    
+                                    // Shared/Private badge
+                                    HStack(spacing: 4) {
+                                        Image(systemName: signal.isShared ? "heart.fill" : "lock.fill")
+                                            .font(.system(size: 9))
+                                        Text(signal.isShared ? "Shared" : "Private")
+                                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                                    }
+                                    .foregroundColor(.black.opacity(0.5))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        Capsule()
+                                            .fill(.white.opacity(0.5))
+                                    )
+                                }
+                                .padding(.horizontal, 24)
                                 
                                 HStack(spacing: 20) {
                                     SignalBubble(
@@ -181,6 +296,7 @@ struct CharacterProfileView: View {
                                     .font(.system(size: 12, design: .rounded))
                                     .foregroundColor(.black.opacity(0.3))
                             }
+                            .padding(.bottom, 12)
                         }
                         
                         // Moments list
@@ -197,7 +313,7 @@ struct CharacterProfileView: View {
                                 }
                             }
                             .padding(.horizontal, 24)
-                            .padding(.top, 28)
+                            .padding(.top, 16)
                             
                             if filteredCharacterMoments.isEmpty {
                                 VStack(spacing: 12) {

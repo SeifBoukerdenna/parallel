@@ -10,16 +10,22 @@ struct ContentView: View {
     @State private var breathingOffset: CGFloat = 0
     @State private var showAddMoment = false
     @State private var showSignalPanel = false
+    @State private var showBucketList = false
     @State private var showTimeline = false
     @State private var showChevronHint = true
+    @State private var showBucketHint = true
     @State private var selectedCharacter: String?
     @State private var isPlayingPreview = false
     @State private var audioPlayer: AVAudioPlayer?
     @State private var buttonPressed = false
     
     // CHANGE THESE TO YOUR REAL NAMES
-    let myName = "Alex"
-    let herName = "Sarah"
+    let myName = "Malik"
+    let herName = "Maya"
+    
+    // CUSTOM CHARACTER IMAGES (optional - leave as nil to use pixel art)
+    let myCharacterImage: String? = "melik_8bit"  // e.g. "alex_character"
+    let herCharacterImage: String? = "maya_8bit"  // Using the uploaded image
     
     var myLatestSignal: Signal? {
         signals.first(where: { $0.author == myName && isToday($0.createdAt) })
@@ -66,8 +72,27 @@ struct ContentView: View {
                 
                 // Main content
                 VStack {
+                    // Pixel bucket at top with hint
+                    VStack(spacing: 8) {
+                        if showBucketHint {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.black.opacity(0.2))
+                                .transition(.opacity)
+                        }
+                        
+                        Button {
+                            showBucketList = true
+                            showBucketHint = false
+                        } label: {
+                            PixelBucket()
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                        }
+                    }
+                    .padding(.top, 16)
+                    
                     Spacer()
-                        .frame(height: geometry.size.height * 0.15)
+                        .frame(height: geometry.size.height * 0.05)
                     
                     // Heart with closeness indicator
                     VStack(spacing: 8) {
@@ -102,11 +127,13 @@ struct ContentView: View {
                                     .frame(width: 8, height: 8)
                             }
                             
-                            PixelCharacter(
+                            CharacterView(
+                                imageName: myCharacterImage,
                                 skinColor: Color(red: 0.95, green: 0.8, blue: 0.7),
                                 hairColor: Color(red: 0.4, green: 0.25, blue: 0.15),
                                 shirtColor: Color(red: 0.2, green: 0.4, blue: 0.8),
-                                breathingOffset: breathingOffset
+                                breathingOffset: breathingOffset,
+                                scale: 1.0
                             )
                             .padding(.top, 16)
                             .onTapGesture {
@@ -128,11 +155,13 @@ struct ContentView: View {
                                     .frame(width: 8, height: 8)
                             }
                             
-                            PixelCharacter(
+                            CharacterView(
+                                imageName: herCharacterImage,
                                 skinColor: Color(red: 0.98, green: 0.85, blue: 0.75),
                                 hairColor: Color(red: 0.95, green: 0.8, blue: 0.3),
                                 shirtColor: Color(red: 0.9, green: 0.2, blue: 0.3),
-                                breathingOffset: breathingOffset
+                                breathingOffset: breathingOffset,
+                                scale: 1.0
                             )
                             .padding(.top, 16)
                             .onTapGesture {
@@ -186,11 +215,19 @@ struct ContentView: View {
             .gesture(
                 DragGesture(minimumDistance: 20)
                     .onEnded { value in
+                        // Swipe up for signals
                         if value.translation.height < -50 {
                             let impact = UIImpactFeedbackGenerator(style: .light)
                             impact.impactOccurred()
                             showSignalPanel = true
                             showChevronHint = false
+                        }
+                        // Swipe down for bucket list
+                        else if value.translation.height > 50 {
+                            let impact = UIImpactFeedbackGenerator(style: .light)
+                            impact.impactOccurred()
+                            showBucketList = true
+                            showBucketHint = false
                         }
                     }
             )
@@ -200,7 +237,12 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSignalPanel) {
             SignalPanelView(myName: myName)
-                .presentationDetents([.height(380)])
+                .presentationDetents([.height(480)])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showBucketList) {
+            BucketListView(myName: myName, herName: herName)
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showTimeline) {
@@ -211,7 +253,9 @@ struct ContentView: View {
                 characterName: character,
                 isMe: character == myName,
                 myName: myName,
-                herName: herName
+                herName: herName,
+                myCharacterImage: myCharacterImage,
+                herCharacterImage: herCharacterImage
             )
         }
         .onAppear {
@@ -219,14 +263,25 @@ struct ContentView: View {
                 breathingOffset = -5
             }
             
-            // Chevron hint animation
+            // Chevron hint animation (swipe up)
             withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
                 showChevronHint = true
+            }
+            
+            // Bucket hint animation (swipe down)
+            withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true).delay(1.5)) {
+                showBucketHint = true
             }
             
             Timer.scheduledTimer(withTimeInterval: 8, repeats: true) { _ in
                 withAnimation(.easeInOut(duration: 1)) {
                     showChevronHint.toggle()
+                }
+            }
+            
+            Timer.scheduledTimer(withTimeInterval: 8, repeats: true) { _ in
+                withAnimation(.easeInOut(duration: 1).delay(1)) {
+                    showBucketHint.toggle()
                 }
             }
         }

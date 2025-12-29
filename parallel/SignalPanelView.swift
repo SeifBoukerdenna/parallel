@@ -101,19 +101,52 @@ struct SignalPanelView: View {
                 
                 Spacer()
                 
-                Button {
-                    saveSignal()
-                } label: {
-                    Text("Save")
+                // Action buttons - Share or Keep Private
+                VStack(spacing: 12) {
+                    Button {
+                        saveSignal(isShared: true)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "heart.fill")
+                            Text("Share with us")
+                        }
                         .font(.system(size: 17, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(.black.opacity(0.75))
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color(red: 0.95, green: 0.4, blue: 0.5),
+                                            Color(red: 0.9, green: 0.3, blue: 0.45)
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                         )
-                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                        .shadow(color: Color.pink.opacity(0.2), radius: 8, x: 0, y: 4)
+                    }
+                    
+                    Button {
+                        saveSignal(isShared: false)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "lock.fill")
+                            Text("Keep mine")
+                        }
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundColor(.black.opacity(0.6))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.white.opacity(0.7))
+                        )
+                        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 24)
@@ -147,12 +180,13 @@ struct SignalPanelView: View {
         }
     }
     
-    private func saveSignal() {
+    private func saveSignal(isShared: Bool) {
         let signal = Signal(
             author: myName,
             energy: energy,
             mood: mood,
-            closeness: closeness
+            closeness: closeness,
+            isShared: isShared
         )
         
         modelContext.insert(signal)
