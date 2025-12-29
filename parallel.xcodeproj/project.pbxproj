@@ -255,6 +255,9 @@
 				DEVELOPMENT_TEAM = VZR89A8Z89;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to capture photo moments.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow microphone?";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photos to share moments.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -284,6 +287,9 @@
 				DEVELOPMENT_TEAM = VZR89A8Z89;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera to capture photo moments.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow microphone?";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photos to share moments.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

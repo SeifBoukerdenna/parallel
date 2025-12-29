@@ -1,64 +1,74 @@
 import SwiftUI
 
-// Pixel heart
 struct HeartPixel: View {
     let pixelSize: CGFloat = 6
     
     var body: some View {
         VStack(spacing: 0) {
-            // Top row
+            // Row 1
             HStack(spacing: 0) {
                 pixel(.clear)
-                pixel(.red)
-                pixel(.red)
+                pixel(.pink)
+                pixel(.pink)
                 pixel(.clear)
-                pixel(.red)
-                pixel(.red)
-                pixel(.clear)
-            }
-            // Second row
-            HStack(spacing: 0) {
-                pixel(.red)
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(.red)
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(.red)
-            }
-            // Third row
-            HStack(spacing: 0) {
-                pixel(.red)
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(.red)
-            }
-            // Fourth row
-            HStack(spacing: 0) {
-                pixel(.clear)
-                pixel(.red)
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(.red)
+                pixel(.pink)
+                pixel(.pink)
                 pixel(.clear)
             }
-            // Fifth row
+            
+            // Row 2
             HStack(spacing: 0) {
-                ForEach(0..<2) { _ in pixel(.clear) }
-                pixel(.red)
-                pixel(Color(red: 1, green: 0.4, blue: 0.4))
-                pixel(.red)
-                ForEach(0..<2) { _ in pixel(.clear) }
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
             }
-            // Bottom
+            
+            // Row 3
             HStack(spacing: 0) {
-                ForEach(0..<3) { _ in pixel(.clear) }
-                pixel(.red)
-                ForEach(0..<3) { _ in pixel(.clear) }
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+            }
+            
+            // Row 4
+            HStack(spacing: 0) {
+                pixel(.clear)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.clear)
+            }
+            
+            // Row 5
+            HStack(spacing: 0) {
+                pixel(.clear)
+                pixel(.clear)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.pink)
+                pixel(.clear)
+                pixel(.clear)
+            }
+            
+            // Row 6
+            HStack(spacing: 0) {
+                pixel(.clear)
+                pixel(.clear)
+                pixel(.clear)
+                pixel(.pink)
+                pixel(.clear)
+                pixel(.clear)
+                pixel(.clear)
             }
         }
     }
@@ -69,4 +79,3 @@ struct HeartPixel: View {
             .frame(width: pixelSize, height: pixelSize)
     }
 }
-

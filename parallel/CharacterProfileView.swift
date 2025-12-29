@@ -1,0 +1,385 @@
+import SwiftUI
+import SwiftData
+import AVFoundation
+
+struct CharacterProfileView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Moment.createdAt, order: .reverse) private var moments: [Moment]
+    @Query(sort: \Signal.createdAt, order: .reverse) private var signals: [Signal]
+    
+    let characterName: String
+    let isMe: Bool
+    let myName: String
+    let herName: String
+    
+    @State private var selectedMoment: Moment?
+    @State private var searchText = ""
+    @State private var isSearching = false
+    
+    var characterMoments: [Moment] {
+        moments.filter { $0.author == characterName }
+    }
+    
+    var filteredCharacterMoments: [Moment] {
+        if searchText.isEmpty {
+            return characterMoments
+        } else {
+            return characterMoments.filter { moment in
+                let titleMatch = moment.title?.localizedCaseInsensitiveContains(searchText) ?? false
+                let textMatch = moment.text?.localizedCaseInsensitiveContains(searchText) ?? false
+                return titleMatch || textMatch
+            }
+        }
+    }
+    
+    var characterSignals: [Signal] {
+        signals.filter { $0.author == characterName }
+    }
+    
+    var latestSignal: Signal? {
+        characterSignals.first
+    }
+    
+    var backgroundColor: Color {
+        isMe ? Color(red: 0.96, green: 0.97, blue: 0.98) : Color(red: 0.98, green: 0.96, blue: 0.97)
+    }
+    
+    var accentColor: Color {
+        isMe ? Color(red: 0.3, green: 0.5, blue: 0.9) : Color(red: 0.9, green: 0.4, blue: 0.5)
+    }
+    
+    var body: some View {
+        ZStack {
+            backgroundColor
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.black.opacity(0.5))
+                            .frame(width: 44, height: 44)
+                    }
+                    
+                    Spacer()
+                    
+                    if characterMoments.count > 0 {
+                        Button {
+                            withAnimation(.spring(response: 0.3)) {
+                                isSearching.toggle()
+                                if !isSearching {
+                                    searchText = ""
+                                }
+                            }
+                        } label: {
+                            Image(systemName: isSearching ? "xmark.circle.fill" : "magnifyingglass")
+                                .font(.system(size: 20))
+                                .foregroundColor(.black.opacity(0.5))
+                                .frame(width: 44, height: 44)
+                        }
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.top, 16)
+                
+                // Search bar
+                if isSearching {
+                    HStack(spacing: 12) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 14))
+                                .foregroundColor(.black.opacity(0.4))
+                            
+                            TextField("Search moments...", text: $searchText)
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundColor(.black.opacity(0.7))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.white.opacity(0.7))
+                        )
+                        
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.black.opacity(0.3))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Character display
+                        VStack(spacing: 16) {
+                            Text(characterName.uppercased())
+                                .font(.system(size: 32, weight: .black, design: .rounded))
+                                .foregroundColor(.black.opacity(0.6))
+                            
+                            if isMe {
+                                PixelCharacter(
+                                    skinColor: Color(red: 0.95, green: 0.8, blue: 0.7),
+                                    hairColor: Color(red: 0.4, green: 0.25, blue: 0.15),
+                                    shirtColor: Color(red: 0.2, green: 0.4, blue: 0.8),
+                                    breathingOffset: 0
+                                )
+                                .scaleEffect(1.5)
+                            } else {
+                                PixelCharacter(
+                                    skinColor: Color(red: 0.98, green: 0.85, blue: 0.75),
+                                    hairColor: Color(red: 0.95, green: 0.8, blue: 0.3),
+                                    shirtColor: Color(red: 0.9, green: 0.2, blue: 0.3),
+                                    breathingOffset: 0
+                                )
+                                .scaleEffect(1.5)
+                            }
+                        }
+                        .padding(.top, 20)
+                        
+                        // Latest signal
+                        if let signal = latestSignal {
+                            VStack(spacing: 12) {
+                                Text("Latest Signal")
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundColor(.black.opacity(0.4))
+                                    .padding(.top, 24)
+                                
+                                HStack(spacing: 20) {
+                                    SignalBubble(
+                                        label: "Energy",
+                                        value: Int(signal.energy),
+                                        color: .orange
+                                    )
+                                    
+                                    SignalBubble(
+                                        label: "Mood",
+                                        value: Int(signal.mood),
+                                        color: signal.mood >= 0 ? .green : .blue
+                                    )
+                                    
+                                    SignalBubble(
+                                        label: "Closeness",
+                                        value: Int(signal.closeness),
+                                        color: .pink
+                                    )
+                                }
+                                .padding(.horizontal, 24)
+                                
+                                Text(signal.createdAt, style: .relative)
+                                    .font(.system(size: 12, design: .rounded))
+                                    .foregroundColor(.black.opacity(0.3))
+                            }
+                        }
+                        
+                        // Moments list
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Moments (\(characterMoments.count))")
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundColor(.black.opacity(0.6))
+                                
+                                if isSearching && !searchText.isEmpty {
+                                    Text("• \(filteredCharacterMoments.count) found")
+                                        .font(.system(size: 14, design: .rounded))
+                                        .foregroundColor(.black.opacity(0.4))
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 28)
+                            
+                            if filteredCharacterMoments.isEmpty {
+                                VStack(spacing: 12) {
+                                    if searchText.isEmpty {
+                                        Image(systemName: "sparkles")
+                                            .font(.system(size: 32))
+                                            .foregroundColor(.black.opacity(0.2))
+                                        
+                                        Text("No moments yet")
+                                            .font(.system(size: 14, design: .rounded))
+                                            .foregroundColor(.black.opacity(0.3))
+                                    } else {
+                                        Image(systemName: "magnifyingglass")
+                                            .font(.system(size: 32))
+                                            .foregroundColor(.black.opacity(0.2))
+                                        
+                                        Text("No moments found")
+                                            .font(.system(size: 14, design: .rounded))
+                                            .foregroundColor(.black.opacity(0.3))
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 40)
+                            } else {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(filteredCharacterMoments) { moment in
+                                        CharacterMomentCard(
+                                            moment: moment,
+                                            accentColor: accentColor
+                                        )
+                                        .onTapGesture {
+                                            selectedMoment = moment
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 20)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .fullScreenCover(item: $selectedMoment) { moment in
+            MomentDetailView(moment: moment, accentColor: accentColor)
+        }
+    }
+}
+
+struct SignalBubble: View {
+    let label: String
+    let value: Int
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Text("\(value)")
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundColor(color)
+            
+            Text(label)
+                .font(.system(size: 11, design: .rounded))
+                .foregroundColor(.black.opacity(0.4))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(color.opacity(0.1))
+        )
+    }
+}
+
+struct CharacterMomentCard: View {
+    let moment: Moment
+    let accentColor: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(accentColor.opacity(0.6))
+                        .frame(width: 6, height: 6)
+                    
+                    Text(moment.isShared ? "Shared" : "Private")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundColor(.black.opacity(0.5))
+                    
+                    // Type indicator
+                    Image(systemName: moment.kind == .photo ? "photo.fill" : moment.kind == .voice ? "mic.fill" : "text.alignleft")
+                        .font(.system(size: 9))
+                        .foregroundColor(.black.opacity(0.3))
+                }
+                
+                Spacer()
+                
+                Text(moment.createdAt, style: .relative)
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundColor(.black.opacity(0.35))
+            }
+            
+            // Title if exists
+            if let title = moment.title, !title.isEmpty {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundColor(.black.opacity(0.7))
+            }
+            
+            // Content preview based on type
+            switch moment.kind {
+            case .text:
+                if let text = moment.text {
+                    Text(text)
+                        .font(.system(size: 14, design: .rounded))
+                        .foregroundColor(.black.opacity(0.65))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+            case .photo:
+                if let photoPath = moment.photoPath {
+                    let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    let photoURL = documentsPath.appendingPathComponent(photoPath)
+                    if let imageData = try? Data(contentsOf: photoURL),
+                       let uiImage = UIImage(data: imageData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                
+            case .voice:
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.15))
+                            .frame(width: 36, height: 36)
+                        
+                        Image(systemName: "waveform")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
+                    }
+                    
+                    HStack(spacing: 3) {
+                        ForEach(0..<10) { i in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.4))
+                                .frame(width: 2.5, height: CGFloat.random(in: 6...20))
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Text("Tap to play")
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundColor(.black.opacity(0.4))
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.08))
+                )
+            }
+            
+            // Tap to view hint
+            HStack {
+                Spacer()
+                Text("Tap to view")
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundColor(.black.opacity(0.3))
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.white.opacity(0.6))
+                .shadow(color: .black.opacity(0.03), radius: 6, x: 0, y: 3)
+        )
+    }
+}

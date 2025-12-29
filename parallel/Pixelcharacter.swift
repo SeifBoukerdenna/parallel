@@ -105,6 +105,5 @@ struct PixelCharacter: View {
         Rectangle()
             .fill(color)
             .frame(width: pixelSize, height: pixelSize)
-            .border(.black.opacity(color == .clear ? 0 : 0.2), width: 0.5)
     }
 }
