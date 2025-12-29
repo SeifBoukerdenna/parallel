@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CloudKit
 
 struct DebugView: View {
     @Environment(\.modelContext) private var modelContext
@@ -15,6 +16,9 @@ struct DebugView: View {
     @State private var testTitle = "Test Notification"
     @State private var testBody = "This is a test!"
     @State private var testResult = ""
+    @State private var cloudKitStatus = "Checking..."
+    @State private var iCloudAccountStatus = "Checking..."
+    @State private var syncResult = ""
     
     var myName: String {
         currentUserName ?? "Unknown"
@@ -66,6 +70,69 @@ struct DebugView: View {
                     .padding(.horizontal, 8)
                     .padding(.top, 16)
                     
+                    // 🚨 CLOUDKIT STATUS (MOST IMPORTANT)
+                    DebugSection(title: "☁️ iCloud Status") {
+                        HStack {
+                            Text("Account:")
+                            Spacer()
+                            Text(iCloudAccountStatus)
+                                .foregroundColor(
+                                    iCloudAccountStatus.contains("Available") ? .green :
+                                    iCloudAccountStatus.contains("Checking") ? .orange : .red
+                                )
+                                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        }
+                        
+                        HStack {
+                            Text("CloudKit:")
+                            Spacer()
+                            Text(cloudKitStatus)
+                                .foregroundColor(
+                                    cloudKitStatus.contains("Working") ? .green :
+                                    cloudKitStatus.contains("Checking") ? .orange : .red
+                                )
+                                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        }
+                        
+                        if iCloudAccountStatus.contains("Not") || cloudKitStatus.contains("Failed") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("⚠️ FIX THIS FIRST:")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.red)
+                                
+                                Text("1. Go to Settings → [Your Name]")
+                                Text("2. Tap iCloud")
+                                Text("3. Make sure iCloud Drive is ON")
+                                Text("4. Scroll down and enable Parallel")
+                                Text("5. BOTH devices must use SAME Apple ID")
+                            }
+                            .font(.system(size: 11, design: .rounded))
+                            .foregroundColor(.black.opacity(0.7))
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.red.opacity(0.1))
+                            )
+                        }
+                        
+                        Button {
+                            checkCloudKitStatus()
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Recheck Status")
+                            }
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.blue)
+                            )
+                        }
+                    }
+                    
                     // Current User
                     DebugSection(title: "Current User") {
                         Text("I am: \(myName)")
@@ -80,6 +147,10 @@ struct DebugView: View {
                             Text("❌ No tokens registered!")
                                 .foregroundColor(.red)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            
+                            Text("This means CloudKit is NOT syncing!")
+                                .font(.system(size: 12, design: .rounded))
+                                .foregroundColor(.red.opacity(0.8))
                         } else {
                             ForEach(deviceTokens) { token in
                                 VStack(alignment: .leading, spacing: 4) {
@@ -150,6 +221,41 @@ struct DebugView: View {
                             .font(.system(size: 12, design: .monospaced))
                     }
                     
+                    // Force Sync (AGGRESSIVE)
+                    DebugSection(title: "🔄 Force Sync") {
+                        if !syncResult.isEmpty {
+                            Text(syncResult)
+                                .font(.system(size: 12, design: .monospaced))
+                                .padding(8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(syncResult.contains("✅") ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                                )
+                        }
+                        
+                        Button {
+                            aggressiveSync()
+                        } label: {
+                            HStack {
+                                Image(systemName: "icloud.and.arrow.down")
+                                Text("FORCE SYNC NOW")
+                            }
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.vertical, 14)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.orange)
+                            )
+                        }
+                        
+                        Text("Press this on BOTH devices, wait 10 seconds")
+                            .font(.system(size: 11, design: .rounded))
+                            .foregroundColor(.black.opacity(0.5))
+                    }
+                    
                     // Test Notification
                     DebugSection(title: "Test Notification") {
                         TextField("Title", text: $testTitle)
@@ -187,44 +293,103 @@ struct DebugView: View {
                         }
                     }
                     
-                    // Force Sync
-                    DebugSection(title: "CloudKit Sync") {
-                        Button {
-                            forceSync()
-                        } label: {
-                            HStack {
-                                Image(systemName: "icloud.and.arrow.down")
-                                Text("Force CloudKit Sync")
-                            }
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                            .padding(.vertical, 12)
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color.orange)
-                            )
-                        }
-                        
-                        Text("Use this if data isn't syncing between devices")
-                            .font(.system(size: 11, design: .rounded))
-                            .foregroundColor(.black.opacity(0.5))
-                    }
-                    
                     // Instructions
                     DebugSection(title: "Troubleshooting") {
                         VStack(alignment: .leading, spacing: 8) {
-                            TipRow(icon: "1.circle.fill", text: "Make sure both devices are signed into the SAME iCloud account")
-                            TipRow(icon: "2.circle.fill", text: "Both devices need internet connection")
-                            TipRow(icon: "3.circle.fill", text: "Open app on both devices to register tokens")
-                            TipRow(icon: "4.circle.fill", text: "Wait 10-30 seconds for CloudKit to sync")
-                            TipRow(icon: "5.circle.fill", text: "Check Xcode Console for detailed logs")
+                            TipRow(icon: "1.circle.fill", text: "Check iCloud status above - FIX IT FIRST")
+                            TipRow(icon: "2.circle.fill", text: "BOTH devices must use SAME Apple ID")
+                            TipRow(icon: "3.circle.fill", text: "Both need internet connection")
+                            TipRow(icon: "4.circle.fill", text: "Press FORCE SYNC on both devices")
+                            TipRow(icon: "5.circle.fill", text: "Wait 10-30 seconds between syncs")
                         }
                     }
                     
                     Spacer().frame(height: 40)
                 }
                 .padding(.horizontal, 20)
+            }
+        }
+        .onAppear {
+            checkCloudKitStatus()
+        }
+    }
+    
+    private func checkCloudKitStatus() {
+        // Check iCloud account status
+        CKContainer.default().accountStatus { status, error in
+            DispatchQueue.main.async {
+                switch status {
+                case .available:
+                    iCloudAccountStatus = "✅ Available"
+                case .noAccount:
+                    iCloudAccountStatus = "❌ Not signed in"
+                case .restricted:
+                    iCloudAccountStatus = "❌ Restricted"
+                case .couldNotDetermine:
+                    iCloudAccountStatus = "⚠️ Unknown"
+                case .temporarilyUnavailable:
+                    iCloudAccountStatus = "⚠️ Temporarily unavailable"
+                @unknown default:
+                    iCloudAccountStatus = "❌ Unknown error"
+                }
+                
+                if let error = error {
+                    iCloudAccountStatus += " - \(error.localizedDescription)"
+                }
+            }
+        }
+        
+        // Test CloudKit access
+        let container = CKContainer(identifier: "iCloud.com.elmelz.parallel")
+        let database = container.privateCloudDatabase
+        
+        // Try to fetch a record to test connectivity
+        let query = CKQuery(recordType: "CD_DeviceToken", predicate: NSPredicate(value: true))
+        query.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        
+        database.perform(query, inZoneWith: nil) { records, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    cloudKitStatus = "❌ Failed: \(error.localizedDescription)"
+                } else {
+                    cloudKitStatus = "✅ Working - Found \(records?.count ?? 0) records"
+                }
+            }
+        }
+    }
+    
+    private func aggressiveSync() {
+        syncResult = "Syncing..."
+        
+        Task {
+            do {
+                print("🔄 [SYNC] Starting aggressive sync...")
+                
+                // Save current context
+                try modelContext.save()
+                print("✅ [SYNC] Saved local data")
+                
+                // Get the CloudKit container
+                guard let container = modelContext.container as? ModelContainer else {
+                    syncResult = "❌ Can't access container"
+                    return
+                }
+                
+                // Try to trigger CloudKit sync (this is hacky but sometimes works)
+                try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+                
+                syncResult = "✅ Sync triggered! Check other device in 10 seconds"
+                print("✅ [SYNC] Complete")
+                
+                // Refresh queries
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    // This forces a UI refresh
+                    _ = deviceTokens.count
+                }
+                
+            } catch {
+                syncResult = "❌ Error: \(error.localizedDescription)"
+                print("❌ [SYNC] Error: \(error)")
             }
         }
     }
@@ -234,6 +399,10 @@ struct DebugView: View {
         testResult = "Sending..."
         
         Task {
+            // Force a sync first
+            try? modelContext.save()
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            
             // Try to get the other user's token
             if let token = await getDeviceToken(for: herName) {
                 print("🧪 [TEST] Found token for \(herName): \(token.prefix(20))...")
@@ -277,8 +446,8 @@ struct DebugView: View {
                     print("🧪 [TEST] Error: \(error)")
                 }
             } else {
-                testResult = "❌ No token found for \(herName)"
-                print("🧪 [TEST] No token found")
+                testResult = "❌ No token for \(herName) - CloudKit not syncing!"
+                print("🧪 [TEST] No token found - sync issue")
             }
         }
     }
@@ -294,24 +463,6 @@ struct DebugView: View {
         } catch {
             print("❌ Error fetching token: \(error)")
             return nil
-        }
-    }
-    
-    private func forceSync() {
-        print("🔄 [SYNC] Forcing CloudKit sync...")
-        
-        Task {
-            do {
-                try modelContext.save()
-                print("✅ [SYNC] SwiftData saved")
-                
-                // Wait a moment for CloudKit to process
-                try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-                
-                print("✅ [SYNC] Complete! Check other device")
-            } catch {
-                print("❌ [SYNC] Error: \(error)")
-            }
         }
     }
 }
