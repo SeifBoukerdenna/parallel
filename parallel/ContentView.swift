@@ -11,6 +11,8 @@ struct ContentView: View {
     
     @AppStorage("currentUserName") private var currentUserName: String?
     
+    @State private var showDebugView = false
+    
     @State private var breathingOffset: CGFloat = 0
     @State private var showAddMoment = false
     @State private var showSignalPanel = false
@@ -183,6 +185,21 @@ struct ContentView: View {
                             Image(systemName: "bell.badge")
                                 .font(.system(size: 16))
                                 .foregroundColor(.black.opacity(0.3))
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(.white.opacity(0.5))
+                                )
+                        }
+                        .padding(.trailing, 16)
+                        .padding(.top, 16)
+                        
+                        Button {
+                            showDebugView = true
+                        } label: {
+                            Image(systemName: "ladybug")
+                                .font(.system(size: 16))
+                                .foregroundColor(.red.opacity(0.5))  // Red so it's easy to spot!
                                 .frame(width: 36, height: 36)
                                 .background(
                                     Circle()
@@ -397,6 +414,9 @@ struct ContentView: View {
                         }
                     }
             )
+        }
+        .sheet(isPresented: $showDebugView) {
+            DebugView()
         }
         .sheet(isPresented: $showAddMoment) {
             AddMomentView(myName: myName)

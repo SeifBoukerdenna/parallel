@@ -11,13 +11,14 @@ struct parallelApp: App {
             Signal.self,
             BucketItem.self,
             UserSettings.self,
-            Ping.self,  // NEW! Comic-style quick messages
+            Ping.self,
+            DeviceToken.self,  // ✅ ADDED - Critical for push notifications!
         ])
         
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
+            cloudKitDatabase: .automatic  // ✅ This syncs everything via CloudKit
         )
 
         do {
