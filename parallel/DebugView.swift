@@ -172,22 +172,6 @@ struct DebugView: View {
                             }
                         }
                         
-                        Button {
-                            NotificationHelper.shared.debugPrintAllTokens(modelContext: modelContext)
-                        } label: {
-                            HStack {
-                                Image(systemName: "arrow.clockwise")
-                                Text("Print to Console")
-                            }
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                            .padding(.vertical, 8)
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.blue)
-                            )
-                        }
                     }
                     
                     // Data Sync Status

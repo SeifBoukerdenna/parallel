@@ -4,6 +4,7 @@ import SwiftData
 struct BucketListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var firebaseManager: FirebaseManager
     @Query(sort: \BucketItem.createdAt, order: .reverse) private var bucketItems: [BucketItem]
     
     let myName: String
@@ -13,7 +14,6 @@ struct BucketListView: View {
     
     var body: some View {
         ZStack {
-            // Soft gradient background matching main app
             LinearGradient(
                 colors: [
                     Color(red: 0.98, green: 0.97, blue: 0.99),
@@ -25,15 +25,12 @@ struct BucketListView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Simple header
                 VStack(spacing: 16) {
-                    // Handle bar
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color.black.opacity(0.15))
                         .frame(width: 40, height: 5)
                         .padding(.top, 12)
                     
-                    // Title with pixel bucket
                     HStack(spacing: 12) {
                         PixelBucket()
                             .scaleEffect(0.7)
@@ -47,7 +44,6 @@ struct BucketListView: View {
                     .padding(.horizontal, 24)
                 }
                 
-                // Items list (show all, completed items are just dimmed/struck)
                 if bucketItems.isEmpty {
                     VStack(spacing: 20) {
                         Spacer()
@@ -83,7 +79,6 @@ struct BucketListView: View {
                 Spacer()
             }
             
-            // Add button
             VStack {
                 Spacer()
                 
@@ -132,6 +127,9 @@ struct BucketListView: View {
             }
         }
         
+        // ✅ SYNC TO FIREBASE
+        firebaseManager.syncBucketItem(item)
+        
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
     }
@@ -149,7 +147,6 @@ struct SimpleBucketCard: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Simple checkbox
             Button(action: onToggle) {
                 ZStack {
                     Circle()
@@ -181,7 +178,6 @@ struct SimpleBucketCard: View {
                         .lineLimit(2)
                 }
                 
-                // Minimal metadata
                 HStack(spacing: 6) {
                     Image(systemName: item.category.icon)
                         .font(.system(size: 9))
@@ -215,10 +211,10 @@ struct SimpleBucketCard: View {
     }
 }
 
-// Simplified Add View
 struct SimplifiedAddBucketItemView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var firebaseManager: FirebaseManager
     
     let myName: String
     
@@ -246,7 +242,6 @@ struct SimplifiedAddBucketItemView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Simple header
                 HStack {
                     Button {
                         dismiss()
@@ -273,7 +268,6 @@ struct SimplifiedAddBucketItemView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Title
                         VStack(spacing: 8) {
                             HStack {
                                 Text("What's the dream?")
@@ -292,7 +286,6 @@ struct SimplifiedAddBucketItemView: View {
                                 )
                         }
                         
-                        // Description (optional)
                         VStack(spacing: 8) {
                             HStack {
                                 Text("Details (optional)")
@@ -324,7 +317,6 @@ struct SimplifiedAddBucketItemView: View {
                             )
                         }
                         
-                        // Simple category picker
                         VStack(spacing: 12) {
                             HStack {
                                 Text("Category")
@@ -357,7 +349,6 @@ struct SimplifiedAddBucketItemView: View {
                 Spacer()
             }
             
-            // Save button
             VStack {
                 Spacer()
                 
@@ -406,6 +397,9 @@ struct SimplifiedAddBucketItemView: View {
         )
         
         modelContext.insert(item)
+        
+        // ✅ SYNC TO FIREBASE
+        firebaseManager.syncBucketItem(item)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()

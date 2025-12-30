@@ -4,6 +4,7 @@ import SwiftData
 struct SignalPanelView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var firebaseManager: FirebaseManager
     @Query(sort: \Signal.createdAt, order: .reverse) private var allSignals: [Signal]
     
     let myName: String
@@ -12,14 +13,12 @@ struct SignalPanelView: View {
     @State private var mood: Double = 0
     @State private var closeness: Double = 50
     
-    // Get my latest signal to use as defaults
     var myLatestSignal: Signal? {
         allSignals.first(where: { $0.author == myName })
     }
     
     var body: some View {
         ZStack {
-            // Soft background
             LinearGradient(
                 colors: [
                     Color(red: 0.98, green: 0.97, blue: 0.99),
@@ -31,7 +30,6 @@ struct SignalPanelView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 20) {
-                // Handle bar
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color.black.opacity(0.15))
                     .frame(width: 40, height: 5)
@@ -43,7 +41,6 @@ struct SignalPanelView: View {
                     .padding(.top, 4)
                 
                 VStack(spacing: 24) {
-                    // Energy slider
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             HStack(spacing: 6) {
@@ -63,7 +60,6 @@ struct SignalPanelView: View {
                         CustomSlider(value: $energy, range: 0...100, color: .orange)
                     }
                     
-                    // Mood slider
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             HStack(spacing: 6) {
@@ -83,7 +79,6 @@ struct SignalPanelView: View {
                         CustomSlider(value: $mood, range: -50...50, color: moodColor)
                     }
                     
-                    // Closeness slider
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             HStack(spacing: 6) {
@@ -107,7 +102,6 @@ struct SignalPanelView: View {
                 
                 Spacer()
                 
-                // Single "Share with us" button
                 Button {
                     saveSignal()
                 } label: {
@@ -139,7 +133,6 @@ struct SignalPanelView: View {
             }
         }
         .onAppear {
-            // Load previous values if they exist
             if let latest = myLatestSignal {
                 energy = latest.energy
                 mood = latest.mood
@@ -180,22 +173,13 @@ struct SignalPanelView: View {
             energy: energy,
             mood: mood,
             closeness: closeness,
-            isShared: true  // Always shared!
+            isShared: true
         )
         
         modelContext.insert(signal)
         
-        // Send notification
-        let herName = myName == "Malik" ? "Maya" : "Malik"
-        
-        NotificationHelper.shared.notifySharedSignal(
-            fromUser: myName,
-            toUser: herName,
-            energy: energy,
-            mood: mood,
-            closeness: closeness,
-            modelContext: modelContext
-        )
+        // ✅ SYNC TO FIREBASE
+        firebaseManager.syncSignal(signal)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
@@ -212,17 +196,14 @@ struct CustomSlider: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                // Track background
                 RoundedRectangle(cornerRadius: 8)
                     .fill(color.opacity(0.15))
                     .frame(height: 8)
                 
-                // Active track
                 RoundedRectangle(cornerRadius: 8)
                     .fill(color.opacity(0.6))
                     .frame(width: progressWidth(geometry: geometry), height: 8)
                 
-                // Thumb
                 Circle()
                     .fill(.white)
                     .frame(width: 24, height: 24)

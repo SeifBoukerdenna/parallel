@@ -4,6 +4,7 @@ import SwiftData
 struct AddPingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var firebaseManager: FirebaseManager
     
     let myName: String
     
@@ -12,7 +13,6 @@ struct AddPingView: View {
     
     let maxChars = 50
     
-    // Quick emoji suggestions
     let quickEmojis = ["💕", "😊", "🥰", "😘", "🤗", "✨", "💖", "🌟", "😍", "🎉", "👋", "💭", "☀️", "🌙"]
     
     var canSend: Bool {
@@ -32,14 +32,12 @@ struct AddPingView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Handle bar
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color.black.opacity(0.15))
                     .frame(width: 40, height: 5)
                     .padding(.top, 12)
                 
                 VStack(spacing: 20) {
-                    // Header with comic bubble icon
                     HStack(spacing: 10) {
                         ZStack {
                             Circle()
@@ -65,7 +63,6 @@ struct AddPingView: View {
                     }
                     .padding(.top, 16)
                     
-                    // Input area with pixel art style
                     VStack(spacing: 12) {
                         HStack {
                             Text("Message")
@@ -79,7 +76,6 @@ struct AddPingView: View {
                                 .foregroundColor(message.count > maxChars ? .red : .black.opacity(0.3))
                         }
                         
-                        // Text input with comic style
                         ZStack {
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(.white.opacity(0.9))
@@ -100,7 +96,6 @@ struct AddPingView: View {
                         .frame(height: 56)
                     }
                     
-                    // Quick emoji picker
                     VStack(spacing: 10) {
                         HStack {
                             Image(systemName: "face.smiling")
@@ -135,7 +130,6 @@ struct AddPingView: View {
                     
                     Spacer()
                     
-                    // Send button with comic style
                     Button {
                         sendPing()
                     } label: {
@@ -163,7 +157,6 @@ struct AddPingView: View {
                                         )
                                     )
                                 
-                                // Comic book style highlight
                                 RoundedRectangle(cornerRadius: 18)
                                     .strokeBorder(.white.opacity(0.3), lineWidth: 2)
                                     .padding(2)
@@ -191,14 +184,8 @@ struct AddPingView: View {
         let ping = Ping(author: myName, message: message)
         modelContext.insert(ping)
         
-        // Send notification
-        let herName = myName == "Malik" ? "Maya" : "Malik"
-        NotificationHelper.shared.notifyPing(
-            fromUser: myName,
-            toUser: herName,
-            message: message,
-            modelContext: modelContext
-        )
+        // ✅ SYNC TO FIREBASE
+        firebaseManager.syncPing(ping)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()

@@ -6,6 +6,7 @@ import AVFoundation
 struct AddMomentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var firebaseManager: FirebaseManager
     
     let myName: String
     
@@ -27,7 +28,6 @@ struct AddMomentView: View {
     
     var body: some View {
         ZStack {
-            // Beautiful gradient background matching app
             LinearGradient(
                 colors: [
                     Color(red: 0.98, green: 0.97, blue: 0.99),
@@ -40,7 +40,6 @@ struct AddMomentView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Elegant header
                 ZStack {
                     HStack {
                         Button {
@@ -75,7 +74,6 @@ struct AddMomentView: View {
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        // Title field with elegant styling
                         VStack(spacing: 8) {
                             HStack {
                                 Image(systemName: "text.quote")
@@ -108,7 +106,6 @@ struct AddMomentView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                         
-                        // Beautiful type selector
                         VStack(spacing: 10) {
                             HStack {
                                 Image(systemName: "square.grid.3x1.fill")
@@ -166,7 +163,6 @@ struct AddMomentView: View {
                             .padding(.horizontal, 20)
                         }
                         
-                        // Content area with smooth transitions
                         Group {
                             switch selectedType {
                             case .text:
@@ -180,7 +176,6 @@ struct AddMomentView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         .padding(.horizontal, 20)
                         
-                        // Bottom padding
                         Color.clear.frame(height: 100)
                     }
                 }
@@ -188,7 +183,6 @@ struct AddMomentView: View {
                 Spacer()
             }
             
-            // Floating share button
             VStack {
                 Spacer()
                 
@@ -582,17 +576,8 @@ struct AddMomentView: View {
         
         modelContext.insert(moment)
         
-        if isShared {
-            let herName = myName == "Malik" ? "Maya" : "Malik"
-            
-            NotificationHelper.shared.notifySharedMoment(
-                fromUser: myName,
-                toUser: herName,
-                momentType: selectedType,
-                title: momentTitle.isEmpty ? nil : momentTitle,
-                modelContext: modelContext
-            )
-        }
+        // ✅ SYNC TO FIREBASE
+        firebaseManager.syncMoment(moment)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()

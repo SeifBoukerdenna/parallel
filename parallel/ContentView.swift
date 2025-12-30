@@ -4,6 +4,8 @@ import AVFoundation
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var firebaseManager: FirebaseManager
+    
     @Query(sort: \Moment.createdAt, order: .reverse) private var moments: [Moment]
     @Query(sort: \Signal.createdAt, order: .reverse) private var signals: [Signal]
     @Query(sort: \Ping.createdAt, order: .reverse) private var pings: [Ping]
@@ -12,7 +14,6 @@ struct ContentView: View {
     @AppStorage("currentUserName") private var currentUserName: String?
     
     @State private var showDebugView = false
-    
     @State private var breathingOffset: CGFloat = 0
     @State private var showAddMoment = false
     @State private var showSignalPanel = false
@@ -116,7 +117,6 @@ struct ContentView: View {
         return herAvailablePoses[index % herAvailablePoses.count]
     }
     
-    // PERSISTENT PINGS - Always show the LATEST ping from each person
     var myLatestPing: Ping? {
         pings.first(where: { $0.author == myName && !$0.isRead })
     }
@@ -129,9 +129,69 @@ struct ContentView: View {
         Group {
             if currentUserName == nil {
                 OnboardingView(selectedName: $currentUserName)
+            } else if !firebaseManager.isAuthenticated {
+                // ✅ LOADING VIEW - Wait for Firebase authentication
+                loadingView
+                    .task {
+                        await authenticateWithFirebase()
+                    }
             } else {
                 mainAppView
             }
+        }
+        .onChange(of: firebaseManager.fcmToken) { oldValue, newValue in
+            if let token = newValue {
+                print("🔑 ===================================")
+                print("🔑 FCM TOKEN FOR TESTING:")
+                print("🔑 \(token)")
+                print("🔑 ===================================")
+            }
+        }
+    }
+    
+    // ✅ LOADING VIEW
+    var loadingView: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.98, green: 0.97, blue: 0.99),
+                    Color(red: 0.96, green: 0.98, blue: 0.99)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                HeartPixel()
+                    .scaleEffect(1.5)
+                
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .padding(.top, 20)
+                
+                Text("Connecting...")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(.black.opacity(0.5))
+            }
+        }
+    }
+    
+    // ✅ FIREBASE AUTHENTICATION
+    private func authenticateWithFirebase() async {
+        guard let userName = currentUserName else { return }
+        
+        do {
+            try await firebaseManager.authenticateUser(userName: userName)
+            
+            // Start listening for real-time updates
+            firebaseManager.startListening {
+                print("🔄 Data updated from Firestore")
+            }
+            
+            print("✅ Firebase authentication complete for: \(userName)")
+        } catch {
+            print("❌ Firebase authentication failed: \(error)")
         }
     }
     
@@ -199,7 +259,7 @@ struct ContentView: View {
                         } label: {
                             Image(systemName: "ladybug")
                                 .font(.system(size: 16))
-                                .foregroundColor(.red.opacity(0.5))  // Red so it's easy to spot!
+                                .foregroundColor(.red.opacity(0.5))
                                 .frame(width: 36, height: 36)
                                 .background(
                                     Circle()
@@ -249,7 +309,7 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: 40)
                     
-                    // Characters with PERSISTENT speech bubbles!
+                    // Characters with PERSISTENT speech bubbles
                     HStack(spacing: 0) {
                         // My character with bubble
                         VStack {
@@ -293,7 +353,6 @@ struct ContentView: View {
                                     showAddPing = true
                                 }
                                 
-                                // My PERSISTENT speech bubble (always shows latest)
                                 if let ping = myLatestPing {
                                     ComicSpeechBubble(
                                         message: ping.message,
@@ -345,7 +404,6 @@ struct ContentView: View {
                                     selectedCharacter = herName
                                 }
                                 
-                                // Her PERSISTENT speech bubble (always shows latest)
                                 if let ping = herLatestPing {
                                     ComicSpeechBubble(
                                         message: ping.message,
@@ -454,17 +512,8 @@ struct ContentView: View {
                 modelContext: modelContext
             )
         }
-        .sheet(isPresented: $showDeviceToken) {
-            DeviceTokenView()
-        }
+
         .onAppear {
-            if let userName = currentUserName {
-                NotificationManager.shared.configure(
-                    userName: userName,
-                    modelContext: modelContext
-                )
-            }
-            
             initializeUserSettings()
             
             withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
@@ -490,8 +539,6 @@ struct ContentView: View {
                     showBucketHint.toggle()
                 }
             }
-            
-            // NO MORE AUTO-DISMISS TIMER! Pings are persistent!
         }
     }
     

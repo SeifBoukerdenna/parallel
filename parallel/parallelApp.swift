@@ -1,9 +1,17 @@
 import SwiftUI
 import SwiftData
+import FirebaseCore
 
 @main
 struct parallelApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var firebaseManager = FirebaseManager.shared
+    
+    // ✅ CRITICAL: Initialize Firebase in App init
+    init() {
+        FirebaseApp.configure()
+        print("✅ Firebase configured in App init")
+    }
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -12,13 +20,12 @@ struct parallelApp: App {
             BucketItem.self,
             UserSettings.self,
             Ping.self,
-            DeviceToken.self,  // ✅ ADDED - Critical for push notifications!
+            // ❌ REMOVED DeviceToken - not needed with Firebase!
         ])
         
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic  // ✅ This syncs everything via CloudKit
+            isStoredInMemoryOnly: false
         )
 
         do {
@@ -31,6 +38,7 @@ struct parallelApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(firebaseManager)
         }
         .modelContainer(sharedModelContainer)
     }
