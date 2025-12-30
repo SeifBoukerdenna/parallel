@@ -536,6 +536,15 @@ extension FirebaseManager: MessagingDelegate {
         print("🔑 \(token)")
         print("🔑 ===================================")
         
+        // ✅ Store token locally first
+        self.fcmToken = token
+        
+        // ✅ ALWAYS try to register immediately (even if not authenticated yet)
         registerFCMToken(token)
+        
+        // ✅ Also register after a delay (in case authentication wasn't ready)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.registerFCMToken(token)
+        }
     }
 }
