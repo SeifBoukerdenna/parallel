@@ -577,7 +577,9 @@ struct AddMomentView: View {
         modelContext.insert(moment)
         
         // ✅ SYNC TO FIREBASE
-        firebaseManager.syncMoment(moment)
+        Task {
+            await firebaseManager.syncMoment(moment)
+        }
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()

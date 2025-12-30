@@ -24,9 +24,12 @@ extension ModelContext {
     func insertAndSync<T>(_ object: T, syncHandler: (T) -> Void) where T: PersistentModel {
         self.insert(object)
         
+        // ✅ FIX: Wrap async calls in Task
         // Sync to Firebase based on type
         if let moment = object as? Moment {
-            FirebaseManager.shared.syncMoment(moment)
+            Task {
+                await FirebaseManager.shared.syncMoment(moment)
+            }
         } else if let signal = object as? Signal {
             FirebaseManager.shared.syncSignal(signal)
         } else if let ping = object as? Ping {

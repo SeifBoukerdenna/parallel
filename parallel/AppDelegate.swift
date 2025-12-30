@@ -43,8 +43,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         print("✅ APNs device token received")
         
-        // ✅ Give token to Firebase Messaging
+        // Convert to hex string for logging
+        let tokenString = deviceToken.map { String(format: "%02x", $0) }.joined()
+        print("📱 APNs Token (hex): \(tokenString)")
+        
+        // ✅ CRITICAL: Give token to Firebase Messaging
         Messaging.messaging().apnsToken = deviceToken
+        print("✅ APNs token set in Firebase Messaging")
     }
     
     // ❌ Called when registration fails
@@ -59,18 +64,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
         print("🔔 Received remote notification")
         print("📦 Notification data: \(userInfo)")
+        
+        // Let Firebase Messaging handle it
+        Messaging.messaging().appDidReceiveMessage(userInfo)
+        
         completionHandler(.newData)
     }
 }
 
 // MARK: - UNUserNotificationCenterDelegate
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    // Handle notification when app is in foreground
+    // Handle notification when app is in FOREGROUND
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        print("🔔 Notification received while app is open")
-        // Show notification even when app is in foreground
+        print("🔔 Notification received while app is in FOREGROUND")
+        print("📦 Notification: \(notification.request.content.userInfo)")
+        
+        // ✅ SHOW BANNER EVEN WHEN APP IS OPEN
         completionHandler([.banner, .sound, .badge])
     }
     
@@ -79,6 +90,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         print("👆 User tapped notification")
+        print("📦 Notification data: \(response.notification.request.content.userInfo)")
         completionHandler()
     }
 }

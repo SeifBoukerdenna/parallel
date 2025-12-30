@@ -516,6 +516,8 @@ struct ContentView: View {
         .onAppear {
             initializeUserSettings()
             
+            firebaseManager.setModelContext(modelContext)
+            
             withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
                 breathingOffset = -5
             }
