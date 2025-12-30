@@ -71,10 +71,10 @@ struct ContentView: View {
         signals.first(where: { $0.author == herName && isToday($0.createdAt) })
     }
     
-    var averageCloseness: Double {
-        let myCloseness = myLatestSignal?.closeness ?? 50
-        let herCloseness = herLatestSignal?.closeness ?? 50
-        return (myCloseness + herCloseness) / 2
+    var averageMood: Double {
+        let myMood = myLatestSignal?.mood ?? 0
+        let herMood = herLatestSignal?.mood ?? 0
+        return (myMood + herMood) / 2
     }
     
     var latestSharedMoment: Moment? {
@@ -130,7 +130,6 @@ struct ContentView: View {
             if currentUserName == nil {
                 OnboardingView(selectedName: $currentUserName)
             } else if !firebaseManager.isAuthenticated {
-                // ✅ LOADING VIEW - Wait for Firebase authentication
                 loadingView
                     .task {
                         await authenticateWithFirebase()
@@ -149,7 +148,6 @@ struct ContentView: View {
         }
     }
     
-    // ✅ LOADING VIEW
     var loadingView: some View {
         ZStack {
             LinearGradient(
@@ -177,14 +175,12 @@ struct ContentView: View {
         }
     }
     
-    // ✅ FIREBASE AUTHENTICATION
     private func authenticateWithFirebase() async {
         guard let userName = currentUserName else { return }
         
         do {
             try await firebaseManager.authenticateUser(userName: userName)
             
-            // Start listening for real-time updates
             firebaseManager.startListening {
                 print("🔄 Data updated from Firestore")
             }
@@ -209,7 +205,6 @@ struct ContentView: View {
                     .frame(width: 1.5)
                 
                 VStack {
-                    // Top bar
                     HStack {
                         Spacer()
                         
@@ -309,9 +304,7 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: 40)
                     
-                    // Characters with PERSISTENT speech bubbles
                     HStack(spacing: 0) {
-                        // My character with bubble
                         VStack {
                             VStack(spacing: 2) {
                                 HStack(spacing: 4) {
@@ -367,7 +360,6 @@ struct ContentView: View {
                         }
                         .frame(maxWidth: .infinity)
                         
-                        // Her character with bubble
                         VStack {
                             VStack(spacing: 2) {
                                 HStack(spacing: 4) {
@@ -481,7 +473,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSignalPanel) {
             SignalPanelView(myName: myName)
-                .presentationDetents([.height(480)])
+                .presentationDetents([.height(550)])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showBucketList) {
@@ -512,7 +504,6 @@ struct ContentView: View {
                 modelContext: modelContext
             )
         }
-
         .onAppear {
             initializeUserSettings()
             
@@ -691,7 +682,8 @@ struct ContentView: View {
     var heartScale: CGFloat {
         let bothHaveSignals = myLatestSignal != nil && herLatestSignal != nil
         if bothHaveSignals {
-            return 1.0 + (averageCloseness / 500)
+            // Scale based on average mood (0 = neutral, 50 = great)
+            return 1.0 + (abs(averageMood) / 250)
         }
         return 0.85
     }
@@ -703,7 +695,10 @@ struct ContentView: View {
     
     var heartGlow: Double {
         let bothHaveSignals = myLatestSignal != nil && herLatestSignal != nil
-        return bothHaveSignals ? (averageCloseness / 100) * 0.6 : 0.0
+        if bothHaveSignals && averageMood > 0 {
+            return (averageMood / 50) * 0.6
+        }
+        return 0.0
     }
     
     func isToday(_ date: Date) -> Bool {

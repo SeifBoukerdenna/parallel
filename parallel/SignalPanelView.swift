@@ -9,9 +9,7 @@ struct SignalPanelView: View {
     
     let myName: String
     
-    @State private var energy: Double = 50
     @State private var mood: Double = 0
-    @State private var closeness: Double = 50
     
     var myLatestSignal: Signal? {
         allSignals.first(where: { $0.author == myName })
@@ -29,78 +27,62 @@ struct SignalPanelView: View {
             )
             .ignoresSafeArea()
             
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color.black.opacity(0.15))
                     .frame(width: 40, height: 5)
                     .padding(.top, 8)
                 
                 Text("How are you feeling?")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundColor(.black.opacity(0.7))
-                    .padding(.top, 4)
-                
-                VStack(spacing: 24) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(Color.orange.opacity(0.3))
-                                    .frame(width: 8, height: 8)
-                                Text("Energy")
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                                    .foregroundColor(.black.opacity(0.6))
-                            }
-                            Spacer()
-                            Text("\(Int(energy))")
-                                .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(Color.orange)
-                        }
-                        
-                        CustomSlider(value: $energy, range: 0...100, color: .orange)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(moodColor.opacity(0.3))
-                                    .frame(width: 8, height: 8)
-                                Text("Mood")
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                                    .foregroundColor(.black.opacity(0.6))
-                            }
-                            Spacer()
-                            Text(moodLabel)
-                                .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(moodColor)
-                        }
-                        
-                        CustomSlider(value: $mood, range: -50...50, color: moodColor)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(Color.pink.opacity(0.3))
-                                    .frame(width: 8, height: 8)
-                                Text("Closeness")
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                                    .foregroundColor(.black.opacity(0.6))
-                            }
-                            Spacer()
-                            Text("\(Int(closeness))")
-                                .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(Color.pink)
-                        }
-                        
-                        CustomSlider(value: $closeness, range: 0...100, color: .pink)
-                    }
-                }
-                .padding(.horizontal, 24)
                 
                 Spacer()
+                
+                // Large mood emoji display
+                VStack(spacing: 20) {
+                    Text(moodEmoji)
+                        .font(.system(size: 120))
+                        .scaleEffect(1.0 + abs(mood) / 200)
+                        .animation(.spring(response: 0.3), value: mood)
+                    
+                    Text(moodLabel)
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(moodColor)
+                }
+                
+                Spacer()
+                
+                // Mood slider
+                VStack(spacing: 16) {
+                    HStack {
+                        Text("😔")
+                            .font(.system(size: 24))
+                            .opacity(0.3)
+                        
+                        Spacer()
+                        
+                        Text("😊")
+                            .font(.system(size: 24))
+                            .opacity(0.3)
+                        
+                        Spacer()
+                        
+                        Text("🤩")
+                            .font(.system(size: 24))
+                            .opacity(0.3)
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    CustomMoodSlider(value: $mood, range: -50...50, color: moodColor)
+                        .padding(.horizontal, 24)
+                    
+                    Text("\(Int(mood))")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(moodColor)
+                        .monospacedDigit()
+                }
+                .padding(.bottom, 20)
                 
                 Button {
                     saveSignal()
@@ -118,40 +100,52 @@ struct SignalPanelView: View {
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color(red: 0.95, green: 0.4, blue: 0.5),
-                                        Color(red: 0.9, green: 0.3, blue: 0.45)
+                                        moodColor,
+                                        moodColor.opacity(0.8)
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
                     )
-                    .shadow(color: Color.pink.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .shadow(color: moodColor.opacity(0.3), radius: 12, x: 0, y: 6)
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .padding(.bottom, 32)
             }
         }
         .onAppear {
             if let latest = myLatestSignal {
-                energy = latest.energy
                 mood = latest.mood
-                closeness = latest.closeness
             }
+        }
+    }
+    
+    var moodEmoji: String {
+        if mood < -30 {
+            return "😔"
+        } else if mood < -10 {
+            return "😐"
+        } else if mood < 10 {
+            return "😊"
+        } else if mood < 30 {
+            return "😄"
+        } else {
+            return "🤩"
         }
     }
     
     var moodLabel: String {
         if mood < -30 {
-            return "😔 Low"
+            return "Low"
         } else if mood < -10 {
-            return "😐 Meh"
+            return "Meh"
         } else if mood < 10 {
-            return "😊 Okay"
+            return "Okay"
         } else if mood < 30 {
-            return "😄 Good"
+            return "Good"
         } else {
-            return "🤩 Great"
+            return "Great"
         }
     }
     
@@ -170,9 +164,7 @@ struct SignalPanelView: View {
     private func saveSignal() {
         let signal = Signal(
             author: myName,
-            energy: energy,
             mood: mood,
-            closeness: closeness,
             isShared: true
         )
         
@@ -188,7 +180,7 @@ struct SignalPanelView: View {
     }
 }
 
-struct CustomSlider: View {
+struct CustomMoodSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     let color: Color
@@ -196,36 +188,59 @@ struct CustomSlider: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
+                // Background track
                 RoundedRectangle(cornerRadius: 8)
                     .fill(color.opacity(0.15))
-                    .frame(height: 8)
+                    .frame(height: 12)
                 
+                // Progress bar
                 RoundedRectangle(cornerRadius: 8)
                     .fill(color.opacity(0.6))
-                    .frame(width: progressWidth(geometry: geometry), height: 8)
+                    .frame(width: progressWidth(geometry: geometry), height: 12)
+                    .offset(x: value >= 0 ? geometry.size.width / 2 : progressWidth(geometry: geometry) + geometry.size.width / 2)
                 
+                // Center marker
+                Rectangle()
+                    .fill(.white.opacity(0.8))
+                    .frame(width: 3, height: 16)
+                    .offset(x: geometry.size.width / 2 - 1.5)
+                
+                // Thumb
                 Circle()
                     .fill(.white)
-                    .frame(width: 24, height: 24)
-                    .shadow(color: color.opacity(0.3), radius: 4, x: 0, y: 2)
-                    .offset(x: progressWidth(geometry: geometry) - 12)
+                    .frame(width: 32, height: 32)
+                    .shadow(color: color.opacity(0.4), radius: 6, x: 0, y: 3)
+                    .offset(x: thumbPosition(geometry: geometry) - 16)
             }
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { gesture in
-                        let percent = min(max(0, gesture.location.x / geometry.size.width), 1)
-                        value = range.lowerBound + (range.upperBound - range.lowerBound) * percent
-                        
+                        let width = geometry.size.width
+                        let x = gesture.location.x
+
+                        let percent = ((x / width) - CGFloat(0.5)) * CGFloat(2)
+
+                        let scaled = percent * (range.upperBound - range.lowerBound) / CGFloat(2)
+                        value = max(range.lowerBound, min(range.upperBound, scaled))
+
                         let impact = UIImpactFeedbackGenerator(style: .light)
                         impact.impactOccurred()
                     }
             )
+
         }
-        .frame(height: 24)
+        .frame(height: 32)
     }
     
     private func progressWidth(geometry: GeometryProxy) -> CGFloat {
-        let percent = (value - range.lowerBound) / (range.upperBound - range.lowerBound)
-        return geometry.size.width * percent
+        let halfWidth = geometry.size.width / 2
+        let percent = abs(value) / (range.upperBound - range.lowerBound) * 2
+        return halfWidth * percent
+    }
+    
+    private func thumbPosition(geometry: GeometryProxy) -> CGFloat {
+        let halfWidth = geometry.size.width / 2
+        let percent = value / (range.upperBound - range.lowerBound) * 2
+        return halfWidth + (percent * halfWidth)
     }
 }

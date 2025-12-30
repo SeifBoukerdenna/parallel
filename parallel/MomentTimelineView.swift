@@ -31,7 +31,6 @@ struct MomentTimelineView: View {
     
     var body: some View {
         ZStack {
-            // Soft gradient background
             LinearGradient(
                 colors: [
                     Color(red: 0.98, green: 0.97, blue: 0.99),
@@ -43,7 +42,6 @@ struct MomentTimelineView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Custom header
                 HStack {
                     Button {
                         dismiss()
@@ -82,7 +80,6 @@ struct MomentTimelineView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 8)
                 
-                // Search bar
                 if isSearching {
                     HStack(spacing: 12) {
                         HStack(spacing: 8) {
@@ -152,7 +149,7 @@ struct MomentTimelineView: View {
                     }
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 14) {
+                        LazyVStack(spacing: 20) {
                             ForEach(filteredMoments) { moment in
                                 MomentCard(
                                     moment: moment,
@@ -190,21 +187,18 @@ struct MomentCard: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Author indicator dot
             Circle()
                 .fill(isMyMoment ? Color(red: 0.3, green: 0.5, blue: 0.9).opacity(0.7) : Color(red: 0.9, green: 0.4, blue: 0.5).opacity(0.7))
                 .frame(width: 10, height: 10)
                 .padding(.top, 6)
             
             VStack(alignment: .leading, spacing: 10) {
-                // Author and time
                 HStack {
                     HStack(spacing: 6) {
                         Text(moment.author)
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(.black.opacity(0.7))
                         
-                        // Type indicator
                         Image(systemName: moment.kind == .photo ? "photo.fill" : moment.kind == .voice ? "mic.fill" : "text.alignleft")
                             .font(.system(size: 10))
                             .foregroundColor(.black.opacity(0.3))
@@ -217,14 +211,12 @@ struct MomentCard: View {
                         .foregroundColor(.black.opacity(0.35))
                 }
                 
-                // Title if exists
                 if let title = moment.title, !title.isEmpty {
                     Text(title)
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundColor(.black.opacity(0.7))
                 }
                 
-                // Content based on type
                 switch moment.kind {
                 case .text:
                     if let text = moment.text {
@@ -276,14 +268,14 @@ struct MomentCard: View {
                             .font(.system(size: 12, design: .rounded))
                             .foregroundColor(.black.opacity(0.4))
                     }
-                    .padding(12)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(red: 0.6, green: 0.4, blue: 0.9).opacity(0.08))
                     )
                 }
                 
-                // Tap to view hint for text and photo
                 if moment.kind != .voice {
                     HStack {
                         Spacer()

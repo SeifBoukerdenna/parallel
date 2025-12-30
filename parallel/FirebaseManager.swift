@@ -154,7 +154,7 @@ class FirebaseManager: NSObject, ObservableObject {
         return downloadURL.absoluteString
     }
     
-    // MARK: - Download from Storage
+    // MARK: - Download from Storage (WITH RETRY)
     
     func downloadFile(storageURL: String, localFilename: String) async throws {
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -168,9 +168,27 @@ class FirebaseManager: NSObject, ObservableObject {
         print("📥 Downloading: \(storageURL)")
         
         let storageRef = storage.reference(forURL: storageURL)
-        _ = try await storageRef.writeAsync(toFile: localURL)
         
-        print("✅ Downloaded: \(localFilename)")
+        // ✅ RETRY LOGIC for downloads
+        var attempts = 0
+        let maxAttempts = 3
+        
+        while attempts < maxAttempts {
+            do {
+                _ = try await storageRef.writeAsync(toFile: localURL)
+                print("✅ Downloaded: \(localFilename)")
+                return
+            } catch {
+                attempts += 1
+                if attempts < maxAttempts {
+                    print("⚠️ Download failed, retry \(attempts)/\(maxAttempts)")
+                    try? await Task.sleep(nanoseconds: 1_000_000_000) // Wait 1 second
+                } else {
+                    print("❌ Download failed after \(maxAttempts) attempts: \(error)")
+                    throw error
+                }
+            }
+        }
     }
     
     // MARK: - Sync TO Cloud
@@ -179,14 +197,26 @@ class FirebaseManager: NSObject, ObservableObject {
         var photoStorageURL: String? = nil
         var audioStorageURL: String? = nil
         
+        // ✅ UPLOAD FILES FIRST, BEFORE SYNCING METADATA
         if let photoPath = moment.photoPath {
-            photoStorageURL = try? await uploadPhoto(localPath: photoPath)
+            do {
+                photoStorageURL = try await uploadPhoto(localPath: photoPath)
+                print("✅ Photo uploaded for moment: \(moment.id)")
+            } catch {
+                print("❌ Failed to upload photo: \(error)")
+            }
         }
         
         if let audioPath = moment.audioPath {
-            audioStorageURL = try? await uploadAudio(localPath: audioPath)
+            do {
+                audioStorageURL = try await uploadAudio(localPath: audioPath)
+                print("✅ Audio uploaded for moment: \(moment.id)")
+            } catch {
+                print("❌ Failed to upload audio: \(error)")
+            }
         }
         
+        // ✅ NOW sync metadata with storage URLs
         let momentData: [String: Any] = [
             "id": moment.id.uuidString,
             "createdAt": Timestamp(date: moment.createdAt),
@@ -205,7 +235,7 @@ class FirebaseManager: NSObject, ObservableObject {
             if let error = error {
                 print("❌ Error syncing moment: \(error)")
             } else {
-                print("✅ Moment synced to Firestore")
+                print("✅ Moment synced to Firestore with media URLs")
             }
         }
     }
@@ -215,9 +245,7 @@ class FirebaseManager: NSObject, ObservableObject {
             "id": signal.id.uuidString,
             "createdAt": Timestamp(date: signal.createdAt),
             "author": signal.author,
-            "energy": signal.energy,
             "mood": signal.mood,
-            "closeness": signal.closeness,
             "isShared": signal.isShared
         ]
         
@@ -242,7 +270,7 @@ class FirebaseManager: NSObject, ObservableObject {
         db.collection("pings").document(ping.id.uuidString).setData(pingData, merge: true)
     }
     
-    func syncBucketItem(_ item: BucketItem) {
+    func syncBucketItem(_ item: BucketItem, wasJustCompleted: Bool = false) {
         let itemData: [String: Any] = [
             "id": item.id.uuidString,
             "createdAt": Timestamp(date: item.createdAt),
@@ -256,6 +284,7 @@ class FirebaseManager: NSObject, ObservableObject {
         ]
         
         db.collection("bucketItems").document(item.id.uuidString).setData(itemData, merge: true)
+        // ✅ Cloud Function handles notification automatically!
     }
     
     func syncUserSettings(_ settings: UserSettings) {
@@ -267,10 +296,17 @@ class FirebaseManager: NSObject, ObservableObject {
             "updatedAt": Timestamp(date: settings.updatedAt)
         ]
         
-        db.collection("userSettings").document(settings.userName).setData(settingsData, merge: true)
+        db.collection("userSettings").document(settings.userName).setData(settingsData, merge: true) { error in
+            if let error = error {
+                print("❌ Error syncing user settings: \(error)")
+            } else {
+                print("✅ User settings synced (pose: \(settings.currentPoseIndex))")
+            }
+        }
     }
     
-    // MARK: - Fetch FROM Cloud
+    
+    // MARK: - Fetch FROM Cloud (WITH INSTANT DOWNLOAD)
     
     private func fetchAndSyncMoments() {
         guard let context = modelContext else { return }
@@ -289,13 +325,19 @@ class FirebaseManager: NSObject, ObservableObject {
                 let photoPath = (data["photoPath"] as? String)?.isEmpty == false ? data["photoPath"] as? String : nil
                 let audioPath = (data["audioPath"] as? String)?.isEmpty == false ? data["audioPath"] as? String : nil
                 
-                // Download files
+                // ✅ DOWNLOAD FILES IMMEDIATELY AND SYNCHRONOUSLY
                 if let photoURL = data["photoStorageURL"] as? String, !photoURL.isEmpty, let filename = photoPath {
-                    Task { try? await self?.downloadFile(storageURL: photoURL, localFilename: filename) }
+                    Task {
+                        try? await self?.downloadFile(storageURL: photoURL, localFilename: filename)
+                        print("✅ Photo downloaded instantly: \(filename)")
+                    }
                 }
                 
                 if let audioURL = data["audioStorageURL"] as? String, !audioURL.isEmpty, let filename = audioPath {
-                    Task { try? await self?.downloadFile(storageURL: audioURL, localFilename: filename) }
+                    Task {
+                        try? await self?.downloadFile(storageURL: audioURL, localFilename: filename)
+                        print("✅ Audio downloaded instantly: \(filename)")
+                    }
                 }
                 
                 let moment = Moment(
@@ -336,9 +378,7 @@ class FirebaseManager: NSObject, ObservableObject {
                 
                 let signal = Signal(
                     author: data["author"] as? String ?? "",
-                    energy: data["energy"] as? Double ?? 50,
                     mood: data["mood"] as? Double ?? 0,
-                    closeness: data["closeness"] as? Double ?? 50,
                     isShared: data["isShared"] as? Bool ?? false
                 )
                 signal.id = id
@@ -440,6 +480,7 @@ class FirebaseManager: NSObject, ObservableObject {
                     if let timestamp = data["updatedAt"] as? Timestamp {
                         existingSettings.updatedAt = timestamp.dateValue()
                     }
+                    print("✅ Updated settings for \(userName) - pose: \(existingSettings.currentPoseIndex)")
                 } else {
                     let settings = UserSettings(
                         userName: userName,

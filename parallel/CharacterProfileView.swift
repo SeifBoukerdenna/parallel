@@ -4,6 +4,7 @@ import AVFoundation
 
 struct CharacterProfileView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var firebaseManager: FirebaseManager
     @Query(sort: \Moment.createdAt, order: .reverse) private var moments: [Moment]
     @Query(sort: \Signal.createdAt, order: .reverse) private var signals: [Signal]
     
@@ -55,13 +56,11 @@ struct CharacterProfileView: View {
         isMe ? Color(red: 0.3, green: 0.5, blue: 0.9) : Color(red: 0.9, green: 0.4, blue: 0.5)
     }
     
-    // Get available poses for this character
     var availablePoses: [String] {
         let poses = CharacterPoses.poses(for: characterName)
         return poses.isEmpty ? [] : poses
     }
     
-    // Get current pose image name
     var currentPoseImage: String? {
         if availablePoses.isEmpty {
             return isMe ? myCharacterImage : herCharacterImage
@@ -75,7 +74,6 @@ struct CharacterProfileView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
                 HStack {
                     Button {
                         dismiss()
@@ -107,7 +105,6 @@ struct CharacterProfileView: View {
                 .padding(.horizontal, 8)
                 .padding(.top, 16)
                 
-                // Search bar
                 if isSearching {
                     HStack(spacing: 12) {
                         HStack(spacing: 8) {
@@ -143,16 +140,13 @@ struct CharacterProfileView: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        // Character display with name and nickname
                         VStack(spacing: 12) {
                             VStack(spacing: 4) {
                                 Text(characterName.uppercased())
                                     .font(.system(size: 32, weight: .black, design: .rounded))
                                     .foregroundColor(.black.opacity(0.6))
                                 
-                                // Nickname display/editor - ONLY for OTHER person
                                 if !isMe {
-                                    // I can edit HER nickname
                                     if let nickname = userSettings?.nickname, !nickname.isEmpty {
                                         Button {
                                             editingNickname = nickname
@@ -184,7 +178,6 @@ struct CharacterProfileView: View {
                                         }
                                     }
                                 } else {
-                                    // Just display my nickname if it exists (can't edit my own)
                                     if let nickname = userSettings?.nickname, !nickname.isEmpty {
                                         Text(nickname)
                                             .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -194,7 +187,6 @@ struct CharacterProfileView: View {
                                 }
                             }
                             
-                            // Character with smaller scale in profile
                             if isMe {
                                 CharacterView(
                                     imageName: currentPoseImage,
@@ -215,10 +207,8 @@ struct CharacterProfileView: View {
                                 )
                             }
                             
-                            // Pose controls (only show if multiple poses available)
                             if !availablePoses.isEmpty && availablePoses.count > 1 {
                                 HStack(spacing: 12) {
-                                    // Previous pose
                                     Button {
                                         withAnimation(.spring(response: 0.3)) {
                                             currentPoseIndex = (currentPoseIndex - 1 + availablePoses.count) % availablePoses.count
@@ -237,7 +227,6 @@ struct CharacterProfileView: View {
                                             )
                                     }
                                     
-                                    // Randomize pose
                                     Button {
                                         withAnimation(.spring(response: 0.3)) {
                                             currentPoseIndex = Int.random(in: 0..<availablePoses.count)
@@ -261,7 +250,6 @@ struct CharacterProfileView: View {
                                         )
                                     }
                                     
-                                    // Next pose
                                     Button {
                                         withAnimation(.spring(response: 0.3)) {
                                             currentPoseIndex = (currentPoseIndex + 1) % availablePoses.count
@@ -282,7 +270,6 @@ struct CharacterProfileView: View {
                                 }
                                 .padding(.top, 8)
                                 
-                                // Pose indicator dots
                                 HStack(spacing: 6) {
                                     ForEach(0..<availablePoses.count, id: \.self) { index in
                                         Circle()
@@ -296,7 +283,6 @@ struct CharacterProfileView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 16)
                         
-                        // Latest signal
                         if let signal = latestSignal {
                             VStack(spacing: 12) {
                                 HStack {
@@ -306,7 +292,6 @@ struct CharacterProfileView: View {
                                     
                                     Spacer()
                                     
-                                    // Shared/Private badge
                                     HStack(spacing: 4) {
                                         Image(systemName: signal.isShared ? "heart.fill" : "lock.fill")
                                             .font(.system(size: 9))
@@ -323,25 +308,11 @@ struct CharacterProfileView: View {
                                 }
                                 .padding(.horizontal, 24)
                                 
-                                HStack(spacing: 20) {
-                                    SignalBubble(
-                                        label: "Energy",
-                                        value: Int(signal.energy),
-                                        color: .orange
-                                    )
-                                    
-                                    SignalBubble(
-                                        label: "Mood",
-                                        value: Int(signal.mood),
-                                        color: signal.mood >= 0 ? .green : .blue
-                                    )
-                                    
-                                    SignalBubble(
-                                        label: "Closeness",
-                                        value: Int(signal.closeness),
-                                        color: .pink
-                                    )
-                                }
+                                SignalBubble(
+                                    label: "Mood",
+                                    value: Int(signal.mood),
+                                    color: moodColor(signal.mood)
+                                )
                                 .padding(.horizontal, 24)
                                 
                                 Text(signal.createdAt, style: .relative)
@@ -351,7 +322,6 @@ struct CharacterProfileView: View {
                             .padding(.bottom, 12)
                         }
                         
-                        // Moments list
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Moments (\(characterMoments.count))")
@@ -423,24 +393,43 @@ struct CharacterProfileView: View {
             .presentationDetents([.height(280)])
         }
         .onAppear {
-            // Initialize current pose from persisted value
             currentPoseIndex = userSettings?.currentPoseIndex ?? 0
         }
     }
     
-    // Update persistent pose index when changed (syncs via CloudKit)
     private func updatePersistentPoseIndex() {
         userSettings?.updatePose(to: currentPoseIndex)
+        
+        // ✅ SYNC TO FIREBASE IMMEDIATELY
+        if let settings = userSettings {
+            firebaseManager.syncUserSettings(settings)
+            print("✅ Synced pose change to Firebase: \(currentPoseIndex)")
+        }
     }
     
-    // Update nickname (syncs via CloudKit)
     private func updateNickname(_ newNickname: String) {
         let trimmed = newNickname.trimmingCharacters(in: .whitespacesAndNewlines)
         userSettings?.updateNickname(to: trimmed.isEmpty ? nil : trimmed)
+        
+        // ✅ SYNC TO FIREBASE
+        if let settings = userSettings {
+            firebaseManager.syncUserSettings(settings)
+        }
+    }
+    
+    private func moodColor(_ mood: Double) -> Color {
+        if mood < -20 {
+            return Color(red: 0.4, green: 0.6, blue: 0.9)
+        } else if mood < 0 {
+            return Color(red: 0.5, green: 0.7, blue: 0.85)
+        } else if mood < 20 {
+            return Color(red: 0.5, green: 0.8, blue: 0.6)
+        } else {
+            return Color(red: 0.7, green: 0.5, blue: 0.9)
+        }
     }
 }
 
-// Simple nickname editor
 struct NicknameEditorView: View {
     @Environment(\.dismiss) private var dismiss
     let characterName: String
@@ -469,7 +458,6 @@ struct NicknameEditorView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 20) {
-                // Handle bar
                 RoundedRectangle(cornerRadius: 3)
                     .fill(Color.black.opacity(0.15))
                     .frame(width: 40, height: 5)
@@ -567,7 +555,6 @@ struct CharacterMomentCard: View {
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundColor(.black.opacity(0.5))
                     
-                    // Type indicator
                     Image(systemName: moment.kind == .photo ? "photo.fill" : moment.kind == .voice ? "mic.fill" : "text.alignleft")
                         .font(.system(size: 9))
                         .foregroundColor(.black.opacity(0.3))
@@ -580,14 +567,12 @@ struct CharacterMomentCard: View {
                     .foregroundColor(.black.opacity(0.35))
             }
             
-            // Title if exists
             if let title = moment.title, !title.isEmpty {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundColor(.black.opacity(0.7))
             }
             
-            // Content preview based on type
             switch moment.kind {
             case .text:
                 if let text = moment.text {
@@ -646,7 +631,6 @@ struct CharacterMomentCard: View {
                 )
             }
             
-            // Tap to view hint
             HStack {
                 Spacer()
                 Text("Tap to view")

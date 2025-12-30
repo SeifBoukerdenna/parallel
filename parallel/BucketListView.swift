@@ -119,6 +119,10 @@ struct BucketListView: View {
     }
     
     private func toggleItem(_ item: BucketItem) {
+        // ✅ Track if this is a NEW completion
+        let wasCompleted = item.isCompleted
+        let isNowCompleting = !wasCompleted
+        
         withAnimation(.spring(response: 0.3)) {
             if item.isCompleted {
                 item.uncomplete()
@@ -127,8 +131,8 @@ struct BucketListView: View {
             }
         }
         
-        // ✅ SYNC TO FIREBASE
-        firebaseManager.syncBucketItem(item)
+        // ✅ SYNC TO FIREBASE with completion flag
+        firebaseManager.syncBucketItem(item, wasJustCompleted: isNowCompleting)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
@@ -398,8 +402,8 @@ struct SimplifiedAddBucketItemView: View {
         
         modelContext.insert(item)
         
-        // ✅ SYNC TO FIREBASE
-        firebaseManager.syncBucketItem(item)
+        // ✅ SYNC TO FIREBASE (not a completion)
+        firebaseManager.syncBucketItem(item, wasJustCompleted: false)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()

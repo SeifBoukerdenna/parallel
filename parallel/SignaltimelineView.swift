@@ -27,7 +27,6 @@ struct SignalTimelineView: View {
         }
     }
     
-    // Group signals by date
     var groupedSignals: [(String, [Signal])] {
         let grouped = Dictionary(grouping: filteredSignals) { signal in
             Calendar.current.startOfDay(for: signal.createdAt)
@@ -40,7 +39,6 @@ struct SignalTimelineView: View {
     
     var body: some View {
         ZStack {
-            // Soft gradient background
             LinearGradient(
                 colors: [
                     Color(red: 0.98, green: 0.97, blue: 0.99),
@@ -52,7 +50,6 @@ struct SignalTimelineView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
                 HStack {
                     Button {
                         dismiss()
@@ -77,7 +74,6 @@ struct SignalTimelineView: View {
                 .padding(.horizontal, 8)
                 .padding(.top, 16)
                 
-                // Filter tabs
                 HStack(spacing: 12) {
                     ForEach(SignalFilter.allCases, id: \.self) { filter in
                         Button {
@@ -125,14 +121,12 @@ struct SignalTimelineView: View {
                         LazyVStack(spacing: 24) {
                             ForEach(groupedSignals, id: \.0) { date, signalsForDate in
                                 VStack(alignment: .leading, spacing: 12) {
-                                    // Date header
                                     Text(date)
                                         .font(.system(size: 13, weight: .bold, design: .rounded))
                                         .foregroundColor(.black.opacity(0.4))
                                         .textCase(.uppercase)
                                         .padding(.horizontal, 24)
                                     
-                                    // Signals for this date
                                     ForEach(signalsForDate) { signal in
                                         SignalCard(
                                             signal: signal,
@@ -204,7 +198,6 @@ struct SignalCard: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Timeline dot
             VStack {
                 Circle()
                     .fill(accentColor)
@@ -216,7 +209,6 @@ struct SignalCard: View {
             }
             
             VStack(alignment: .leading, spacing: 14) {
-                // Header with mood prominently displayed
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(signal.author)
@@ -230,7 +222,6 @@ struct SignalCard: View {
                     
                     Spacer()
                     
-                    // Large mood display
                     HStack(spacing: 8) {
                         Text(moodEmoji)
                             .font(.system(size: 40))
@@ -250,23 +241,6 @@ struct SignalCard: View {
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(moodColor.opacity(0.12))
-                    )
-                }
-                
-                // Metrics
-                HStack(spacing: 10) {
-                    MetricBubble(
-                        label: "Energy",
-                        value: Int(signal.energy),
-                        color: .orange,
-                        icon: "bolt.fill"
-                    )
-                    
-                    MetricBubble(
-                        label: "Closeness",
-                        value: Int(signal.closeness),
-                        color: .pink,
-                        icon: "heart.fill"
                     )
                 }
             }
@@ -293,36 +267,5 @@ struct SignalCard: View {
         } else {
             return "Great"
         }
-    }
-}
-
-struct MetricBubble: View {
-    let label: String
-    let value: Int
-    let color: Color
-    let icon: String
-    
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 11))
-                .foregroundColor(color)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundColor(.black.opacity(0.4))
-                
-                Text("\(value)")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(color)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(color.opacity(0.1))
-        )
     }
 }
