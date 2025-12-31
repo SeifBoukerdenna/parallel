@@ -207,7 +207,8 @@ struct CharacterProfileView: View {
                                 )
                             }
                             
-                            if !availablePoses.isEmpty && availablePoses.count > 1 {
+                            // Only show pose controls if viewing own character
+                            if !availablePoses.isEmpty && availablePoses.count > 1 && isMe {
                                 HStack(spacing: 12) {
                                     Button {
                                         withAnimation(.spring(response: 0.3)) {

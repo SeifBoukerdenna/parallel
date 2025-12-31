@@ -198,7 +198,7 @@ struct ContentView: View {
                     .frame(width: 1.5)
                 
                 VStack {
-                    HStack {
+                    HStack(spacing: 8) {
                         Spacer()
                         
                         Button {
@@ -226,9 +226,9 @@ struct ContentView: View {
                                         .fill(.white.opacity(0.5))
                                 )
                         }
-                        .padding(.trailing, 16)
-                        .padding(.top, 16)
                     }
+                    .padding(.trailing, 16)
+                    .padding(.top, 16)
                     
                     VStack(spacing: 8) {
                         if showBucketHint {
@@ -282,6 +282,31 @@ struct ContentView: View {
                                     Circle()
                                         .fill(malikHasActivity ? Color.blue.opacity(0.6) : Color.gray.opacity(0.3))
                                         .frame(width: 8, height: 8)
+                                }
+                                
+                                // MOOD DISPLAY
+                                if let signal = malikLatestSignal {
+                                    HStack(spacing: 4) {
+                                        Text(signal.sentimentEnum.emoji)
+                                            .font(.system(size: 14))
+                                        Text(signal.sentimentEnum.rawValue)
+                                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                                            .foregroundColor(Color(
+                                                red: signal.sentimentEnum.color.red,
+                                                green: signal.sentimentEnum.color.green,
+                                                blue: signal.sentimentEnum.color.blue
+                                            ))
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color(
+                                                red: signal.sentimentEnum.color.red,
+                                                green: signal.sentimentEnum.color.green,
+                                                blue: signal.sentimentEnum.color.blue
+                                            ).opacity(0.15))
+                                    )
                                 }
                                 
                                 if let nickname = malikSettings?.nickname, !nickname.isEmpty {
@@ -340,6 +365,31 @@ struct ContentView: View {
                                     Circle()
                                         .fill(mayaHasActivity ? Color.pink.opacity(0.6) : Color.gray.opacity(0.3))
                                         .frame(width: 8, height: 8)
+                                }
+                                
+                                // MOOD DISPLAY
+                                if let signal = mayaLatestSignal {
+                                    HStack(spacing: 4) {
+                                        Text(signal.sentimentEnum.emoji)
+                                            .font(.system(size: 14))
+                                        Text(signal.sentimentEnum.rawValue)
+                                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                                            .foregroundColor(Color(
+                                                red: signal.sentimentEnum.color.red,
+                                                green: signal.sentimentEnum.color.green,
+                                                blue: signal.sentimentEnum.color.blue
+                                            ))
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color(
+                                                red: signal.sentimentEnum.color.red,
+                                                green: signal.sentimentEnum.color.green,
+                                                blue: signal.sentimentEnum.color.blue
+                                            ).opacity(0.15))
+                                    )
                                 }
                                 
                                 if let nickname = mayaSettings?.nickname, !nickname.isEmpty {
