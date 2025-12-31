@@ -308,10 +308,8 @@ struct CharacterProfileView: View {
                                 }
                                 .padding(.horizontal, 24)
                                 
-                                SignalBubble(
-                                    label: "Mood",
-                                    value: Int(signal.mood),
-                                    color: moodColor(signal.mood)
+                                SentimentBubble(
+                                    sentiment: signal.sentimentEnum
                                 )
                                 .padding(.horizontal, 24)
                                 
@@ -400,10 +398,8 @@ struct CharacterProfileView: View {
     private func updatePersistentPoseIndex() {
         userSettings?.updatePose(to: currentPoseIndex)
         
-        // ✅ SYNC TO FIREBASE IMMEDIATELY
         if let settings = userSettings {
             firebaseManager.syncUserSettings(settings)
-            print("✅ Synced pose change to Firebase: \(currentPoseIndex)")
         }
     }
     
@@ -411,21 +407,8 @@ struct CharacterProfileView: View {
         let trimmed = newNickname.trimmingCharacters(in: .whitespacesAndNewlines)
         userSettings?.updateNickname(to: trimmed.isEmpty ? nil : trimmed)
         
-        // ✅ SYNC TO FIREBASE
         if let settings = userSettings {
             firebaseManager.syncUserSettings(settings)
-        }
-    }
-    
-    private func moodColor(_ mood: Double) -> Color {
-        if mood < -20 {
-            return Color(red: 0.4, green: 0.6, blue: 0.9)
-        } else if mood < 0 {
-            return Color(red: 0.5, green: 0.7, blue: 0.85)
-        } else if mood < 20 {
-            return Color(red: 0.5, green: 0.8, blue: 0.6)
-        } else {
-            return Color(red: 0.7, green: 0.5, blue: 0.9)
         }
     }
 }
@@ -515,26 +498,29 @@ struct NicknameEditorView: View {
     }
 }
 
-struct SignalBubble: View {
-    let label: String
-    let value: Int
-    let color: Color
+struct SentimentBubble: View {
+    let sentiment: Sentiment
+    
+    var sentimentColor: Color {
+        Color(red: sentiment.color.red,
+              green: sentiment.color.green,
+              blue: sentiment.color.blue)
+    }
     
     var body: some View {
-        VStack(spacing: 6) {
-            Text("\(value)")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(color)
+        VStack(spacing: 8) {
+            Text(sentiment.emoji)
+                .font(.system(size: 32))
             
-            Text(label)
-                .font(.system(size: 11, design: .rounded))
-                .foregroundColor(.black.opacity(0.4))
+            Text(sentiment.rawValue)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(sentimentColor)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(color.opacity(0.1))
+                .fill(sentimentColor.opacity(0.1))
         )
     }
 }

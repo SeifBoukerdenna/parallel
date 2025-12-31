@@ -13,7 +13,6 @@ struct ContentView: View {
     
     @AppStorage("currentUserName") private var currentUserName: String?
     
-    @State private var showDebugView = false
     @State private var breathingOffset: CGFloat = 0
     @State private var showAddMoment = false
     @State private var showSignalPanel = false
@@ -26,7 +25,6 @@ struct ContentView: View {
     @State private var isPlayingPreview = false
     @State private var audioPlayer: AVAudioPlayer?
     @State private var buttonPressed = false
-    @State private var showDeviceToken = false
     @State private var showAddPing = false
     
     let malikName = "Malik"
@@ -39,90 +37,96 @@ struct ContentView: View {
         currentUserName ?? malikName
     }
     
-    var herName: String {
-        if myName == malikName {
-            return mayaName
-        } else {
-            return malikName
+    var otherName: String {
+        myName == malikName ? mayaName : malikName
+    }
+    
+    var malikSettings: UserSettings? {
+        userSettings.first(where: { $0.userName == malikName })
+    }
+    
+    var mayaSettings: UserSettings? {
+        userSettings.first(where: { $0.userName == mayaName })
+    }
+    
+    var malikDisplayName: String {
+        if let nickname = malikSettings?.nickname, !nickname.isEmpty {
+            return nickname
         }
+        return malikName
     }
     
-    var myCharacterImage: String? {
-        myName == malikName ? malikCharacterImage : mayaCharacterImage
+    var mayaDisplayName: String {
+        if let nickname = mayaSettings?.nickname, !nickname.isEmpty {
+            return nickname
+        }
+        return mayaName
     }
     
-    var herCharacterImage: String? {
-        herName == malikName ? malikCharacterImage : mayaCharacterImage
+    var malikLatestSignal: Signal? {
+        signals.first(where: { $0.author == malikName && isToday($0.createdAt) })
     }
     
-    var mySettings: UserSettings? {
-        userSettings.first(where: { $0.userName == myName })
+    var mayaLatestSignal: Signal? {
+        signals.first(where: { $0.author == mayaName && isToday($0.createdAt) })
     }
     
-    var herSettings: UserSettings? {
-        userSettings.first(where: { $0.userName == herName })
-    }
-    
-    var myLatestSignal: Signal? {
-        signals.first(where: { $0.author == myName && isToday($0.createdAt) })
-    }
-    
-    var herLatestSignal: Signal? {
-        signals.first(where: { $0.author == herName && isToday($0.createdAt) })
-    }
-    
-    var averageMood: Double {
-        let myMood = myLatestSignal?.mood ?? 0
-        let herMood = herLatestSignal?.mood ?? 0
-        return (myMood + herMood) / 2
+    var bothHavePositiveSentiments: Bool {
+        guard let malikSignal = malikLatestSignal,
+              let mayaSignal = mayaLatestSignal else { return false }
+        
+        let positiveSentiments: Set<String> = ["Ecstatic", "Excited", "Happy", "Grateful", "Peaceful", "Content", "Hopeful", "Playful", "Romantic", "Horny", "Energized"]
+        
+        return positiveSentiments.contains(malikSignal.sentimentEnum.rawValue) &&
+               positiveSentiments.contains(mayaSignal.sentimentEnum.rawValue)
     }
     
     var latestSharedMoment: Moment? {
         moments.first(where: { $0.isShared })
     }
     
-    var myHasActivity: Bool {
-        moments.contains(where: { $0.author == myName && isToday($0.createdAt) }) ||
-        myLatestSignal != nil
+    var malikHasActivity: Bool {
+        moments.contains(where: { $0.author == malikName && isToday($0.createdAt) }) ||
+        malikLatestSignal != nil
     }
     
-    var herHasActivity: Bool {
-        moments.contains(where: { $0.author == herName && isToday($0.createdAt) }) ||
-        herLatestSignal != nil
+    var mayaHasActivity: Bool {
+        moments.contains(where: { $0.author == mayaName && isToday($0.createdAt) }) ||
+        mayaLatestSignal != nil
     }
     
-    var myAvailablePoses: [String] {
-        let poses = CharacterPoses.poses(for: myName)
+    var malikAvailablePoses: [String] {
+        let poses = CharacterPoses.poses(for: malikName)
         return poses.isEmpty ? [] : poses
     }
     
-    var herAvailablePoses: [String] {
-        let poses = CharacterPoses.poses(for: herName)
+    var mayaAvailablePoses: [String] {
+        let poses = CharacterPoses.poses(for: mayaName)
         return poses.isEmpty ? [] : poses
     }
     
-    var currentMyPoseImage: String? {
-        if myAvailablePoses.isEmpty {
-            return myCharacterImage
+    var currentMalikPoseImage: String? {
+        if malikAvailablePoses.isEmpty {
+            return malikCharacterImage
         }
-        let index = mySettings?.currentPoseIndex ?? 0
-        return myAvailablePoses[index % myAvailablePoses.count]
+        let index = malikSettings?.currentPoseIndex ?? 0
+        return malikAvailablePoses[index % malikAvailablePoses.count]
     }
     
-    var currentHerPoseImage: String? {
-        if herAvailablePoses.isEmpty {
-            return herCharacterImage
+    var currentMayaPoseImage: String? {
+        if mayaAvailablePoses.isEmpty {
+            return mayaCharacterImage
         }
-        let index = herSettings?.currentPoseIndex ?? 0
-        return herAvailablePoses[index % herAvailablePoses.count]
+        let index = mayaSettings?.currentPoseIndex ?? 0
+        return mayaAvailablePoses[index % mayaAvailablePoses.count]
     }
     
-    var myLatestPing: Ping? {
-        pings.first(where: { $0.author == myName && !$0.isRead })
+    var malikLatestPing: Ping? {
+        pings.first(where: { $0.author == malikName && !$0.isRead })
     }
     
-    var herLatestPing: Ping? {
-        pings.first(where: { $0.author == herName && !$0.isRead })
+    var mayaLatestPing: Ping? {
+        pings.first(where: { $0.author == mayaName && !$0.isRead })
     }
     
     var body: some View {
@@ -136,14 +140,6 @@ struct ContentView: View {
                     }
             } else {
                 mainAppView
-            }
-        }
-        .onChange(of: firebaseManager.fcmToken) { oldValue, newValue in
-            if let token = newValue {
-                print("🔑 ===================================")
-                print("🔑 FCM TOKEN FOR TESTING:")
-                print("🔑 \(token)")
-                print("🔑 ===================================")
             }
         }
     }
@@ -180,12 +176,9 @@ struct ContentView: View {
         
         do {
             try await firebaseManager.authenticateUser(userName: userName)
-            
             firebaseManager.startListening {
                 print("🔄 Data updated from Firestore")
             }
-            
-            print("✅ Firebase authentication complete for: \(userName)")
         } catch {
             print("❌ Firebase authentication failed: \(error)")
         }
@@ -227,34 +220,6 @@ struct ContentView: View {
                             Image(systemName: "waveform.path.ecg")
                                 .font(.system(size: 16))
                                 .foregroundColor(.black.opacity(0.3))
-                                .frame(width: 36, height: 36)
-                                .background(
-                                    Circle()
-                                        .fill(.white.opacity(0.5))
-                                )
-                        }
-                        
-                        Button {
-                            showDeviceToken = true
-                        } label: {
-                            Image(systemName: "bell.badge")
-                                .font(.system(size: 16))
-                                .foregroundColor(.black.opacity(0.3))
-                                .frame(width: 36, height: 36)
-                                .background(
-                                    Circle()
-                                        .fill(.white.opacity(0.5))
-                                )
-                        }
-                        .padding(.trailing, 16)
-                        .padding(.top, 16)
-                        
-                        Button {
-                            showDebugView = true
-                        } label: {
-                            Image(systemName: "ladybug")
-                                .font(.system(size: 16))
-                                .foregroundColor(.red.opacity(0.5))
                                 .frame(width: 36, height: 36)
                                 .background(
                                     Circle()
@@ -304,20 +269,22 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: 40)
                     
+                    // MALIK ALWAYS LEFT, MAYA ALWAYS RIGHT
                     HStack(spacing: 0) {
+                        // MALIK - LEFT SIDE
                         VStack {
                             VStack(spacing: 2) {
                                 HStack(spacing: 4) {
-                                    Text(myName.uppercased())
+                                    Text(malikName.uppercased())
                                         .font(.system(size: 28, weight: .black, design: .rounded))
                                         .foregroundColor(.black.opacity(0.5))
                                     
                                     Circle()
-                                        .fill(myHasActivity ? Color.blue.opacity(0.6) : Color.gray.opacity(0.3))
+                                        .fill(malikHasActivity ? Color.blue.opacity(0.6) : Color.gray.opacity(0.3))
                                         .frame(width: 8, height: 8)
                                 }
                                 
-                                if let nickname = mySettings?.nickname, !nickname.isEmpty {
+                                if let nickname = malikSettings?.nickname, !nickname.isEmpty {
                                     Text(nickname)
                                         .font(.system(size: 14, weight: .medium, design: .rounded))
                                         .foregroundColor(.black.opacity(0.35))
@@ -327,7 +294,7 @@ struct ContentView: View {
                             
                             ZStack(alignment: .top) {
                                 CharacterView(
-                                    imageName: currentMyPoseImage,
+                                    imageName: currentMalikPoseImage,
                                     skinColor: Color(red: 0.95, green: 0.8, blue: 0.7),
                                     hairColor: Color(red: 0.4, green: 0.25, blue: 0.15),
                                     shirtColor: Color(red: 0.2, green: 0.4, blue: 0.8),
@@ -338,15 +305,17 @@ struct ContentView: View {
                                 .onTapGesture {
                                     let impact = UIImpactFeedbackGenerator(style: .light)
                                     impact.impactOccurred()
-                                    selectedCharacter = myName
+                                    selectedCharacter = malikName
                                 }
                                 .onLongPressGesture(minimumDuration: 0.5) {
-                                    let impact = UIImpactFeedbackGenerator(style: .medium)
-                                    impact.impactOccurred()
-                                    showAddPing = true
+                                    if myName == malikName {
+                                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                                        impact.impactOccurred()
+                                        showAddPing = true
+                                    }
                                 }
                                 
-                                if let ping = myLatestPing {
+                                if let ping = malikLatestPing {
                                     ComicSpeechBubble(
                                         message: ping.message,
                                         isMyMessage: true
@@ -360,19 +329,20 @@ struct ContentView: View {
                         }
                         .frame(maxWidth: .infinity)
                         
+                        // MAYA - RIGHT SIDE
                         VStack {
                             VStack(spacing: 2) {
                                 HStack(spacing: 4) {
-                                    Text(herName.uppercased())
+                                    Text(mayaName.uppercased())
                                         .font(.system(size: 28, weight: .black, design: .rounded))
                                         .foregroundColor(.black.opacity(0.5))
                                     
                                     Circle()
-                                        .fill(herHasActivity ? Color.pink.opacity(0.6) : Color.gray.opacity(0.3))
+                                        .fill(mayaHasActivity ? Color.pink.opacity(0.6) : Color.gray.opacity(0.3))
                                         .frame(width: 8, height: 8)
                                 }
                                 
-                                if let nickname = herSettings?.nickname, !nickname.isEmpty {
+                                if let nickname = mayaSettings?.nickname, !nickname.isEmpty {
                                     Text(nickname)
                                         .font(.system(size: 14, weight: .medium, design: .rounded))
                                         .foregroundColor(.black.opacity(0.35))
@@ -382,7 +352,7 @@ struct ContentView: View {
                             
                             ZStack(alignment: .top) {
                                 CharacterView(
-                                    imageName: currentHerPoseImage,
+                                    imageName: currentMayaPoseImage,
                                     skinColor: Color(red: 0.98, green: 0.85, blue: 0.75),
                                     hairColor: Color(red: 0.95, green: 0.8, blue: 0.3),
                                     shirtColor: Color(red: 0.9, green: 0.2, blue: 0.3),
@@ -393,10 +363,17 @@ struct ContentView: View {
                                 .onTapGesture {
                                     let impact = UIImpactFeedbackGenerator(style: .light)
                                     impact.impactOccurred()
-                                    selectedCharacter = herName
+                                    selectedCharacter = mayaName
+                                }
+                                .onLongPressGesture(minimumDuration: 0.5) {
+                                    if myName == mayaName {
+                                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                                        impact.impactOccurred()
+                                        showAddPing = true
+                                    }
                                 }
                                 
-                                if let ping = herLatestPing {
+                                if let ping = mayaLatestPing {
                                     ComicSpeechBubble(
                                         message: ping.message,
                                         isMyMessage: false
@@ -465,27 +442,24 @@ struct ContentView: View {
                     }
             )
         }
-        .sheet(isPresented: $showDebugView) {
-            DebugView()
-        }
         .sheet(isPresented: $showAddMoment) {
             AddMomentView(myName: myName)
         }
         .sheet(isPresented: $showSignalPanel) {
             SignalPanelView(myName: myName)
-                .presentationDetents([.height(550)])
+                .presentationDetents([.height(600)])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showBucketList) {
-            BucketListView(myName: myName, herName: herName)
+            BucketListView(myName: myName, herName: otherName, myDisplayName: malikDisplayName, herDisplayName: mayaDisplayName)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showTimeline) {
-            MomentTimelineView(myName: myName, herName: herName)
+            MomentTimelineView(myName: myName, herName: otherName, myDisplayName: malikDisplayName, herDisplayName: mayaDisplayName)
         }
         .sheet(isPresented: $showSignalTimeline) {
-            SignalTimelineView(myName: myName, herName: herName)
+            SignalTimelineView(myName: myName, herName: otherName, myDisplayName: malikDisplayName, herDisplayName: mayaDisplayName)
         }
         .sheet(isPresented: $showAddPing) {
             AddPingView(myName: myName)
@@ -497,16 +471,15 @@ struct ContentView: View {
                 characterName: character,
                 isMe: character == myName,
                 myName: myName,
-                herName: herName,
-                myCharacterImage: myCharacterImage,
-                herCharacterImage: herCharacterImage,
-                userSettings: character == myName ? mySettings : herSettings,
+                herName: otherName,
+                myCharacterImage: character == malikName ? malikCharacterImage : mayaCharacterImage,
+                herCharacterImage: character == mayaName ? mayaCharacterImage : malikCharacterImage,
+                userSettings: character == malikName ? malikSettings : mayaSettings,
                 modelContext: modelContext
             )
         }
         .onAppear {
             initializeUserSettings()
-            
             firebaseManager.setModelContext(modelContext)
             
             withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
@@ -571,7 +544,7 @@ struct ContentView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
                 
-                Text("— \(moment.author)")
+                Text("— \(moment.author == malikName ? malikDisplayName : mayaDisplayName)")
                     .font(.system(size: 11, design: .rounded))
                     .foregroundColor(.black.opacity(0.3))
                 
@@ -597,7 +570,7 @@ struct ContentView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "photo.fill")
                                     .font(.system(size: 9))
-                                Text("— \(moment.author)")
+                                Text("— \(moment.author == malikName ? malikDisplayName : mayaDisplayName)")
                             }
                             .font(.system(size: 11, design: .rounded))
                             .foregroundColor(.black.opacity(0.3))
@@ -640,7 +613,7 @@ struct ContentView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "waveform")
                             .font(.system(size: 9))
-                        Text("— \(moment.author)")
+                        Text("— \(moment.author == malikName ? malikDisplayName : mayaDisplayName)")
                     }
                     .font(.system(size: 11, design: .rounded))
                     .foregroundColor(.black.opacity(0.3))
@@ -680,23 +653,23 @@ struct ContentView: View {
     }
     
     var heartScale: CGFloat {
-        let bothHaveSignals = myLatestSignal != nil && herLatestSignal != nil
-        if bothHaveSignals {
-            // Scale based on average mood (0 = neutral, 50 = great)
-            return 1.0 + (abs(averageMood) / 250)
+        let bothHaveSignals = malikLatestSignal != nil && mayaLatestSignal != nil
+        if bothHaveSignals && bothHavePositiveSentiments {
+            return 1.15
+        } else if bothHaveSignals {
+            return 1.0
         }
         return 0.85
     }
     
     var heartOpacity: Double {
-        let bothHaveSignals = myLatestSignal != nil && herLatestSignal != nil
+        let bothHaveSignals = malikLatestSignal != nil && mayaLatestSignal != nil
         return bothHaveSignals ? 1.0 : 0.5
     }
     
     var heartGlow: Double {
-        let bothHaveSignals = myLatestSignal != nil && herLatestSignal != nil
-        if bothHaveSignals && averageMood > 0 {
-            return (averageMood / 50) * 0.6
+        if bothHavePositiveSentiments {
+            return 0.6
         }
         return 0.0
     }

@@ -257,7 +257,7 @@ struct AddMomentView: View {
                 if momentText.isEmpty {
                     Text("What's on your mind?")
                         .font(.system(size: 16, design: .rounded))
-                        .foregroundColor(.black.opacity(0.3))
+                        .foregroundColor(.black)
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                 }
@@ -374,7 +374,7 @@ struct AddMomentView: View {
     }
     
     var voiceInputView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 32) {
             if hasRecording {
                 VStack(spacing: 20) {
                     ZStack {
@@ -576,7 +576,6 @@ struct AddMomentView: View {
         
         modelContext.insert(moment)
         
-        // ✅ SYNC TO FIREBASE
         Task {
             await firebaseManager.syncMoment(moment)
         }

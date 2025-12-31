@@ -169,7 +169,6 @@ class FirebaseManager: NSObject, ObservableObject {
         
         let storageRef = storage.reference(forURL: storageURL)
         
-        // ✅ RETRY LOGIC for downloads
         var attempts = 0
         let maxAttempts = 3
         
@@ -182,7 +181,7 @@ class FirebaseManager: NSObject, ObservableObject {
                 attempts += 1
                 if attempts < maxAttempts {
                     print("⚠️ Download failed, retry \(attempts)/\(maxAttempts)")
-                    try? await Task.sleep(nanoseconds: 1_000_000_000) // Wait 1 second
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                 } else {
                     print("❌ Download failed after \(maxAttempts) attempts: \(error)")
                     throw error
@@ -197,7 +196,6 @@ class FirebaseManager: NSObject, ObservableObject {
         var photoStorageURL: String? = nil
         var audioStorageURL: String? = nil
         
-        // ✅ UPLOAD FILES FIRST, BEFORE SYNCING METADATA
         if let photoPath = moment.photoPath {
             do {
                 photoStorageURL = try await uploadPhoto(localPath: photoPath)
@@ -216,7 +214,6 @@ class FirebaseManager: NSObject, ObservableObject {
             }
         }
         
-        // ✅ NOW sync metadata with storage URLs
         let momentData: [String: Any] = [
             "id": moment.id.uuidString,
             "createdAt": Timestamp(date: moment.createdAt),
@@ -245,7 +242,7 @@ class FirebaseManager: NSObject, ObservableObject {
             "id": signal.id.uuidString,
             "createdAt": Timestamp(date: signal.createdAt),
             "author": signal.author,
-            "mood": signal.mood,
+            "sentiment": signal.sentiment,
             "isShared": signal.isShared
         ]
         
@@ -284,7 +281,6 @@ class FirebaseManager: NSObject, ObservableObject {
         ]
         
         db.collection("bucketItems").document(item.id.uuidString).setData(itemData, merge: true)
-        // ✅ Cloud Function handles notification automatically!
     }
     
     func syncUserSettings(_ settings: UserSettings) {
@@ -305,7 +301,6 @@ class FirebaseManager: NSObject, ObservableObject {
         }
     }
     
-    
     // MARK: - Fetch FROM Cloud (WITH INSTANT DOWNLOAD)
     
     private func fetchAndSyncMoments() {
@@ -325,7 +320,6 @@ class FirebaseManager: NSObject, ObservableObject {
                 let photoPath = (data["photoPath"] as? String)?.isEmpty == false ? data["photoPath"] as? String : nil
                 let audioPath = (data["audioPath"] as? String)?.isEmpty == false ? data["audioPath"] as? String : nil
                 
-                // ✅ DOWNLOAD FILES IMMEDIATELY AND SYNCHRONOUSLY
                 if let photoURL = data["photoStorageURL"] as? String, !photoURL.isEmpty, let filename = photoPath {
                     Task {
                         try? await self?.downloadFile(storageURL: photoURL, localFilename: filename)
@@ -376,9 +370,12 @@ class FirebaseManager: NSObject, ObservableObject {
                 let existing = try? context.fetch(descriptor)
                 if existing?.isEmpty == false { continue }
                 
+                let sentimentString = data["sentiment"] as? String ?? Sentiment.okay.rawValue
+                let sentiment = Sentiment(rawValue: sentimentString) ?? .okay
+                
                 let signal = Signal(
                     author: data["author"] as? String ?? "",
-                    mood: data["mood"] as? Double ?? 0,
+                    sentiment: sentiment,
                     isShared: data["isShared"] as? Bool ?? false
                 )
                 signal.id = id
@@ -577,13 +574,10 @@ extension FirebaseManager: MessagingDelegate {
         print("🔑 \(token)")
         print("🔑 ===================================")
         
-        // ✅ Store token locally first
         self.fcmToken = token
         
-        // ✅ ALWAYS try to register immediately (even if not authenticated yet)
         registerFCMToken(token)
         
-        // ✅ Also register after a delay (in case authentication wasn't ready)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
             self?.registerFCMToken(token)
         }

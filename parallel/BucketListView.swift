@@ -9,6 +9,8 @@ struct BucketListView: View {
     
     let myName: String
     let herName: String
+    let myDisplayName: String
+    let herDisplayName: String
     
     @State private var showAddItem = false
     
@@ -54,16 +56,20 @@ struct BucketListView: View {
                         
                         Text("Start dreaming")
                             .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.black.opacity(0.35))
+                            .foregroundColor(.black.opacity(0.5))
                         
                         Spacer()
                     }
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 12) {
+                        LazyVStack(spacing: 8) {
                             ForEach(bucketItems) { item in
                                 SimpleBucketCard(
                                     item: item,
+                                    myName: myName,
+                                    herName: herName,
+                                    myDisplayName: myDisplayName,
+                                    herDisplayName: herDisplayName,
                                     onToggle: {
                                         toggleItem(item)
                                     }
@@ -119,7 +125,6 @@ struct BucketListView: View {
     }
     
     private func toggleItem(_ item: BucketItem) {
-        // ✅ Track if this is a NEW completion
         let wasCompleted = item.isCompleted
         let isNowCompleting = !wasCompleted
         
@@ -131,7 +136,6 @@ struct BucketListView: View {
             }
         }
         
-        // ✅ SYNC TO FIREBASE with completion flag
         firebaseManager.syncBucketItem(item, wasJustCompleted: isNowCompleting)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)
@@ -141,12 +145,24 @@ struct BucketListView: View {
 
 struct SimpleBucketCard: View {
     let item: BucketItem
+    let myName: String
+    let herName: String
+    let myDisplayName: String
+    let herDisplayName: String
     let onToggle: () -> Void
     
     var categoryColor: Color {
         Color(red: item.category.color.red,
               green: item.category.color.green,
               blue: item.category.color.blue)
+    }
+    
+    var displayName: String {
+        if item.addedBy == myName {
+            return myDisplayName
+        } else {
+            return herDisplayName
+        }
     }
     
     var body: some View {
@@ -190,7 +206,7 @@ struct SimpleBucketCard: View {
                     
                     Text("•")
                     
-                    Text(item.addedBy)
+                    Text(displayName)
                         .font(.system(size: 11, design: .rounded))
                     
                     if item.isCompleted, let completedAt = item.completedAt {
@@ -302,7 +318,7 @@ struct SimplifiedAddBucketItemView: View {
                                 if description.isEmpty {
                                     Text("See the Eiffel Tower at sunset...")
                                         .font(.system(size: 15, design: .rounded))
-                                        .foregroundColor(.black.opacity(0.3))
+                                        .foregroundColor(.black)
                                         .padding(.horizontal, 18)
                                         .padding(.top, 18)
                                 }
@@ -401,8 +417,6 @@ struct SimplifiedAddBucketItemView: View {
         )
         
         modelContext.insert(item)
-        
-        // ✅ SYNC TO FIREBASE (not a completion)
         firebaseManager.syncBucketItem(item, wasJustCompleted: false)
         
         let impact = UIImpactFeedbackGenerator(style: .medium)

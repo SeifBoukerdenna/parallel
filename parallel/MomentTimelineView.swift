@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import AVFoundation
 
 struct MomentTimelineView: View {
     @Environment(\.dismiss) private var dismiss
@@ -8,6 +7,8 @@ struct MomentTimelineView: View {
     
     let myName: String
     let herName: String
+    let myDisplayName: String
+    let herDisplayName: String
     
     @State private var selectedMoment: Moment?
     @State private var searchText = ""
@@ -124,11 +125,11 @@ struct MomentTimelineView: View {
                             
                             Text("No shared moments yet")
                                 .font(.system(size: 18, weight: .medium, design: .rounded))
-                                .foregroundColor(.black.opacity(0.4))
+                                .foregroundColor(.black.opacity(0.5))
                             
                             Text("Create moments and share them together")
                                 .font(.system(size: 14, design: .rounded))
-                                .foregroundColor(.black.opacity(0.3))
+                                .foregroundColor(.black.opacity(0.5))
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 40)
                         } else {
@@ -138,24 +139,23 @@ struct MomentTimelineView: View {
                             
                             Text("No moments found")
                                 .font(.system(size: 18, weight: .medium, design: .rounded))
-                                .foregroundColor(.black.opacity(0.4))
+                                .foregroundColor(.black.opacity(0.5))
                             
                             Text("Try a different search")
                                 .font(.system(size: 14, design: .rounded))
-                                .foregroundColor(.black.opacity(0.3))
+                                .foregroundColor(.black.opacity(0.5))
                         }
                         
                         Spacer()
                     }
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 20) {
+                        LazyVStack(spacing: 12) {
                             ForEach(filteredMoments) { moment in
                                 MomentCard(
                                     moment: moment,
                                     isMyMoment: moment.author == myName,
-                                    myName: myName,
-                                    herName: herName,
+                                    displayName: moment.author == myName ? myDisplayName : herDisplayName,
                                     searchText: searchText
                                 )
                                 .onTapGesture {
@@ -181,8 +181,7 @@ struct MomentTimelineView: View {
 struct MomentCard: View {
     let moment: Moment
     let isMyMoment: Bool
-    let myName: String
-    let herName: String
+    let displayName: String
     let searchText: String
     
     var body: some View {
@@ -195,7 +194,7 @@ struct MomentCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     HStack(spacing: 6) {
-                        Text(moment.author)
+                        Text(displayName)
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(.black.opacity(0.7))
                         

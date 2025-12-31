@@ -7,6 +7,8 @@ struct SignalTimelineView: View {
     
     let myName: String
     let herName: String
+    let myDisplayName: String
+    let herDisplayName: String
     
     @State private var selectedFilter: SignalFilter = .all
     
@@ -108,17 +110,17 @@ struct SignalTimelineView: View {
                         
                         Text("No signals yet")
                             .font(.system(size: 18, weight: .medium, design: .rounded))
-                            .foregroundColor(.black.opacity(0.4))
+                            .foregroundColor(.black.opacity(0.5))
                         
                         Text("Share how you're feeling")
                             .font(.system(size: 14, design: .rounded))
-                            .foregroundColor(.black.opacity(0.3))
+                            .foregroundColor(.black.opacity(0.5))
                         
                         Spacer()
                     }
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 24) {
+                        LazyVStack(spacing: 12) {
                             ForEach(groupedSignals, id: \.0) { date, signalsForDate in
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text(date)
@@ -131,8 +133,7 @@ struct SignalTimelineView: View {
                                         SignalCard(
                                             signal: signal,
                                             isMySignal: signal.author == myName,
-                                            myName: myName,
-                                            herName: herName
+                                            displayName: signal.author == myName ? myDisplayName : herDisplayName
                                         )
                                     }
                                 }
@@ -163,37 +164,16 @@ struct SignalTimelineView: View {
 struct SignalCard: View {
     let signal: Signal
     let isMySignal: Bool
-    let myName: String
-    let herName: String
+    let displayName: String
     
     var accentColor: Color {
         isMySignal ? Color(red: 0.3, green: 0.5, blue: 0.9) : Color(red: 0.9, green: 0.4, blue: 0.5)
     }
     
-    var moodEmoji: String {
-        if signal.mood > 30 {
-            return "🤩"
-        } else if signal.mood > 10 {
-            return "😄"
-        } else if signal.mood > -10 {
-            return "😊"
-        } else if signal.mood > -30 {
-            return "😐"
-        } else {
-            return "😔"
-        }
-    }
-    
-    var moodColor: Color {
-        if signal.mood < -20 {
-            return Color(red: 0.4, green: 0.6, blue: 0.9)
-        } else if signal.mood < 0 {
-            return Color(red: 0.5, green: 0.7, blue: 0.85)
-        } else if signal.mood < 20 {
-            return Color(red: 0.5, green: 0.8, blue: 0.6)
-        } else {
-            return Color(red: 0.7, green: 0.5, blue: 0.9)
-        }
+    var sentimentColor: Color {
+        Color(red: signal.sentimentEnum.color.red,
+              green: signal.sentimentEnum.color.green,
+              blue: signal.sentimentEnum.color.blue)
     }
     
     var body: some View {
@@ -211,7 +191,7 @@ struct SignalCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(signal.author)
+                        Text(displayName)
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundColor(.black.opacity(0.7))
                         
@@ -223,24 +203,20 @@ struct SignalCard: View {
                     Spacer()
                     
                     HStack(spacing: 8) {
-                        Text(moodEmoji)
+                        Text(signal.sentimentEnum.emoji)
                             .font(.system(size: 40))
                         
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text(moodLabel)
+                            Text(signal.sentimentEnum.rawValue)
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundColor(moodColor)
-                            
-                            Text("\(Int(signal.mood))")
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundColor(moodColor.opacity(0.7))
+                                .foregroundColor(sentimentColor)
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(moodColor.opacity(0.12))
+                            .fill(sentimentColor.opacity(0.12))
                     )
                 }
             }
@@ -253,19 +229,5 @@ struct SignalCard: View {
             )
         }
         .padding(.horizontal, 20)
-    }
-    
-    var moodLabel: String {
-        if signal.mood < -30 {
-            return "Low"
-        } else if signal.mood < -10 {
-            return "Meh"
-        } else if signal.mood < 10 {
-            return "Okay"
-        } else if signal.mood < 30 {
-            return "Good"
-        } else {
-            return "Great"
-        }
     }
 }
